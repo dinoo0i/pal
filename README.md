@@ -23,10 +23,10 @@ PAL (Prompt Assembly Language) is a framework for managing LLM prompts as versio
 
 ```bash
 # Install with uv (recommended)
-uv add pal-py
+uv add pal-framework
 
 # Or with pip
-pip install pal-py
+pip install pal-framework
 ```
 
 ## 📁 Project Structure
