@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import re
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -20,7 +21,7 @@ from ..exceptions.core import (
     PALMissingComponentError,
     PALMissingVariableError,
 )
-from ..models.schema import ComponentLibrary, PromptAssembly, VariableType
+from ..models.schema import ComponentLibrary, PALVariable, PromptAssembly, VariableType
 from .loader import Loader
 from .resolver import Resolver, ResolverCache
 
@@ -33,7 +34,7 @@ class ComponentTemplateLoader(BaseLoader):
 
     def get_source(
         self, environment: Environment, template: str
-    ) -> tuple[str, str | None, bool]:
+    ) -> tuple[str, str | None, Callable[[], bool] | None]:
         """Get template source for component references."""
         if "." not in template:
             raise TemplateError(
@@ -196,7 +197,7 @@ class PromptCompiler:
         return typed_vars
 
     def _add_default_variables(
-        self, var_definitions: list, typed_vars: dict[str, Any]
+        self, var_definitions: list[PALVariable], typed_vars: dict[str, Any]
     ) -> None:
         """Add default values for missing variables."""
         default_values = {
@@ -217,7 +218,7 @@ class PromptCompiler:
 
     def _convert_variable(self, value: Any, var_type: VariableType) -> Any:
         """Convert a variable to the specified type."""
-        converters = {
+        converters: dict[VariableType, Callable[[Any], Any]] = {
             VariableType.ANY: lambda v: v,
             VariableType.STRING: str,
             VariableType.INTEGER: self._convert_to_int,
@@ -255,13 +256,13 @@ class PromptCompiler:
             raise ValueError(f"Cannot convert string '{value}' to boolean")
         return bool(value)
 
-    def _convert_to_list(self, value: Any) -> list:
+    def _convert_to_list(self, value: Any) -> list[Any]:
         """Convert value to list."""
         if not isinstance(value, list | tuple):
             raise TypeError(f"Expected list or tuple, got {type(value).__name__}")
         return list(value)
 
-    def _convert_to_dict(self, value: Any) -> dict:
+    def _convert_to_dict(self, value: Any) -> dict[str, Any]:
         """Convert value to dict."""
         if not isinstance(value, dict):
             raise TypeError(f"Expected dict, got {type(value).__name__}")

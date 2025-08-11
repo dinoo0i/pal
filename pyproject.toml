@@ -64,6 +64,10 @@ disallow_incomplete_defs = true
 check_untyped_defs = true
 disallow_untyped_decorators = true
 
+[[tool.mypy.overrides]]
+module = ["openai", "anthropic"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
@@ -73,3 +77,8 @@ addopts = "--strict-markers --strict-config --cov=pal --cov-report=term-missing"
 [tool.coverage.run]
 source = ["src"]
 omit = ["*/tests/*", "*/__init__.py"]
+
+[dependency-groups]
+dev = [
+    "types-pyyaml>=6.0.12.20250809",
+]

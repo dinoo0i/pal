@@ -17,7 +17,13 @@ from rich.table import Table
 
 from ..core.compiler import PromptCompiler
 from ..core.evaluation import EvaluationReporter, EvaluationRunner
-from ..core.executor import AnthropicClient, MockLLMClient, OpenAIClient, PromptExecutor
+from ..core.executor import (
+    AnthropicClient,
+    BaseLLMClient,
+    MockLLMClient,
+    OpenAIClient,
+    PromptExecutor,
+)
 from ..core.loader import Loader
 from ..exceptions.core import PALError
 
@@ -79,7 +85,7 @@ def _load_variables(variables: str | None, vars_file: Path | None) -> dict[str, 
 
 def _create_llm_client(
     provider: str, api_key: str | None, mock_message: str | None = None
-):
+) -> BaseLLMClient:
     """Create LLM client based on provider."""
     if provider == "openai":
         return OpenAIClient(api_key)
@@ -93,7 +99,7 @@ def _create_llm_client(
 async def _run_execution_async(
     pal_file: Path,
     vars_dict: dict[str, Any],
-    llm_client,
+    llm_client: BaseLLMClient,
     model: str,
     temperature: float,
     max_tokens: int | None,
@@ -116,7 +122,9 @@ async def _run_execution_async(
     _output_result(result, output, json_output, model)
 
 
-def _output_result(result, output: Path | None, json_output: bool, model: str) -> None:
+def _output_result(
+    result: Any, output: Path | None, json_output: bool, model: str
+) -> None:
     """Output the execution result."""
     if output:
         if json_output:
@@ -154,7 +162,7 @@ def _get_files_to_validate(path: Path, recursive: bool) -> list[Path]:
 
 
 def _validate_files(
-    files_to_check: list[Path], loader, compiler, base_path: Path
+    files_to_check: list[Path], loader: Any, compiler: Any, base_path: Path
 ) -> tuple[Table, int, int]:
     """Validate files and return results table."""
     table = Table(title="PAL Validation Results")
@@ -182,7 +190,7 @@ def _validate_files(
 
 
 def _validate_single_file(
-    file_path: Path, loader, compiler
+    file_path: Path, loader: Any, compiler: Any
 ) -> tuple[str, str, str, bool]:
     """Validate a single file and return validation results."""
     try:
@@ -217,7 +225,7 @@ def _validate_single_file(
 async def _run_evaluation_async(
     eval_file: Path,
     pal_file: Path | None,
-    llm_client,
+    llm_client: BaseLLMClient,
     model: str,
     temperature: float,
     max_tokens: int | None,
@@ -239,7 +247,7 @@ async def _run_evaluation_async(
 
 
 def _generate_evaluation_report(
-    result, output: Path | None, output_format: str
+    result: Any, output: Path | None, output_format: str
 ) -> None:
     """Generate and output evaluation report."""
     reporter = EvaluationReporter()
@@ -260,7 +268,9 @@ def _generate_evaluation_report(
             console.print(report_text)
 
 
-def _show_evaluation_summary(result, output: Path | None, output_format: str) -> None:
+def _show_evaluation_summary(
+    result: Any, output: Path | None, output_format: str
+) -> None:
     """Show evaluation summary and exit if there were failures."""
     if result.pass_rate == 1.0:
         console.print(f"[green]✓ All {result.total_tests} tests passed![/green]")
