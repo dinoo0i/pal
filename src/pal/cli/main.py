@@ -65,6 +65,18 @@ def handle_error(error: Exception) -> None:
         error_console.print(f"[red]Unexpected error:[/red] {error}")
 
 
+def _is_prompt_assembly_file(file_path: Path) -> bool:
+    """Check if a file is a prompt assembly file (.pal or .yml without .lib)."""
+    return file_path.suffix == ".pal" or (
+        file_path.suffix == ".yml" and not file_path.name.endswith(".lib.yml")
+    )
+
+
+def _is_library_file(file_path: Path) -> bool:
+    """Check if a file is a component library file (.pal.lib or .lib.yml)."""
+    return file_path.name.endswith(".pal.lib") or file_path.name.endswith(".lib.yml")
+
+
 def _load_variables(variables: str | None, vars_file: Path | None) -> dict[str, Any]:
     """Load variables from file and/or command line."""
     vars_dict: dict[str, Any] = {}
@@ -152,11 +164,20 @@ def _get_files_to_validate(path: Path, recursive: bool) -> list[Path]:
     if path.is_file():
         files_to_check.append(path)
     elif path.is_dir():
+        # Include .pal files
         pattern = "**/*.pal" if recursive else "*.pal"
         files_to_check.extend(path.glob(pattern))
 
+        # Include .pal.lib files
         pattern_lib = "**/*.pal.lib" if recursive else "*.pal.lib"
         files_to_check.extend(path.glob(pattern_lib))
+
+        # Include .yml files (both prompt assemblies and libraries)
+        pattern_yml = "**/*.yml" if recursive else "*.yml"
+        yml_files = path.glob(pattern_yml)
+        for yml_file in yml_files:
+            if _is_prompt_assembly_file(yml_file) or _is_library_file(yml_file):
+                files_to_check.append(yml_file)
 
     return files_to_check
 
@@ -194,7 +215,7 @@ def _validate_single_file(
 ) -> tuple[str, str, str, bool]:
     """Validate a single file and return validation results."""
     try:
-        if file_path.suffix == ".pal":
+        if _is_prompt_assembly_file(file_path):
             prompt_assembly = loader.load_prompt_assembly(file_path)
             file_type = "Assembly"
 
@@ -211,7 +232,7 @@ def _validate_single_file(
                 return file_type, status, issues, False
             return file_type, "[green]Valid[/green]", "", True
 
-        if file_path.suffix == ".lib" and file_path.name.endswith(".pal.lib"):
+        if _is_library_file(file_path):
             loader.load_component_library(file_path)
             return "Library", "[green]Valid[/green]", "", True
 
@@ -450,7 +471,7 @@ def info(pal_file: Path) -> None:
     try:
         loader = Loader()
 
-        if pal_file.name.endswith(".pal.lib"):
+        if _is_library_file(pal_file):
             library = loader.load_component_library(pal_file)
 
             table = Table(title=f"Component Library: {library.library_id}")

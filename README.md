@@ -15,6 +15,7 @@ PAL (Prompt Assembly Language) is a framework for managing LLM prompts as versio
 - **LLM Integration**: Built-in support for OpenAI, Anthropic, and custom providers
 - **Evaluation Framework**: Comprehensive testing system for prompt validation
 - **Rich CLI**: Beautiful command-line interface with syntax highlighting
+- **Flexible Extensions**: Use `.pal/.pal.lib` or `.yml/.lib.yml` extensions
 - **Type Safety**: Full Pydantic v2 validation for all schemas
 - **Observability**: Structured logging and execution tracking
 
@@ -33,10 +34,10 @@ pip install pal
 ```
 my_pal_project/
 ├── prompts/
-│   ├── classify_intent.pal
+│   ├── classify_intent.pal     # or .yml for better IDE support
 │   └── code_review.pal
 ├── libraries/
-│   ├── behavioral_traits.pal.lib
+│   ├── behavioral_traits.pal.lib    # or .lib.yml
 │   ├── reasoning_strategies.pal.lib
 │   └── output_formats.pal.lib
 └── evaluation/
