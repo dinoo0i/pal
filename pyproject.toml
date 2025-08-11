@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "Nicolas Iglesias", email = "nfiglesias@gmail.com" }
 ]
-license = {text = "MIT"}
+license = {file = "LICENSE"}
 requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.8.0",
@@ -81,5 +81,6 @@ omit = ["*/tests/*", "*/__init__.py"]
 
 [dependency-groups]
 dev = [
+    "twine>=6.1.0",
     "types-pyyaml>=6.0.12.20250809",
 ]
