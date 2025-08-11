@@ -341,7 +341,7 @@ wheels = [
 ]
 
 [[package]]
-name = "pal-py"
+name = "pal-framework"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
