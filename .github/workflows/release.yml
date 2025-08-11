@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (e.g., 1.0.0)'
+        description: "Version to release (e.g., 1.0.0)"
         required: true
         type: string
 
@@ -46,6 +46,34 @@ jobs:
             echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           fi
 
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get the last release tag
+          LAST_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' | head -2 | tail -1)
+          if [ -z "$LAST_TAG" ]; then
+            # If no previous tag, get all commits
+            COMMITS=$(git log --oneline --pretty=format:"- %s (%h)" HEAD)
+          else
+            # Get commits since last tag
+            COMMITS=$(git log --oneline --pretty=format:"- %s (%h)" ${LAST_TAG}..HEAD)
+          fi
+
+          # Create changelog
+          CHANGELOG="## What's Changed"$'\n'
+          if [ -z "$COMMITS" ]; then
+            CHANGELOG+="- No changes since last release"
+          else
+            CHANGELOG+="$COMMITS"
+          fi
+
+          # Escape for GitHub output
+          {
+            echo "changelog<<EOF"
+            echo "$CHANGELOG"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release
         uses: actions/create-release@v1
         id: create_release
@@ -56,10 +84,7 @@ jobs:
           release_name: Release ${{ steps.get_version.outputs.tag_name }}
           draft: false
           prerelease: false
-          body: |
-            ## Changes in ${{ steps.get_version.outputs.tag_name }}
-            
-            Please see the [CHANGELOG](https://github.com/cyqlelabs/pal/blob/main/CHANGELOG.md) for details.
+          body: ${{ steps.changelog.outputs.changelog }}
 
       - name: Get built package info
         id: get_package_info
