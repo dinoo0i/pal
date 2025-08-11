@@ -5,15 +5,15 @@ from pydantic import ValidationError
 
 from pal.models.schema import (
     ComponentLibrary,
-    PromptAssembly,
-    PALVariable,
-    VariableType,
-    PALComponent,
     ComponentType,
-    ExecutionResult,
+    EvaluationAssertion,
     EvaluationSuite,
     EvaluationTestCase,
-    EvaluationAssertion,
+    ExecutionResult,
+    PALComponent,
+    PALVariable,
+    PromptAssembly,
+    VariableType,
 )
 
 

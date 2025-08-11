@@ -45,6 +45,8 @@ packages = ["src/pal"]
 [tool.ruff]
 target-version = "py312"
 line-length = 88
+
+[tool.ruff.lint]
 select = ["E", "F", "W", "C90", "I", "N", "UP", "B", "A", "C4", "PIE", "RET", "SIM"]
 ignore = ["E501"]
 

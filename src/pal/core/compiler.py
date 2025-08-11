@@ -5,13 +5,12 @@ from __future__ import annotations
 import asyncio
 import re
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from jinja2 import (
     BaseLoader,
     Environment,
     StrictUndefined,
-    Template,
     TemplateError,
     meta,
 )
@@ -29,7 +28,7 @@ from .resolver import Resolver, ResolverCache
 class ComponentTemplateLoader(BaseLoader):
     """Custom Jinja2 loader for PAL components."""
 
-    def __init__(self, resolved_libraries: Dict[str, ComponentLibrary]) -> None:
+    def __init__(self, resolved_libraries: dict[str, ComponentLibrary]) -> None:
         self.resolved_libraries = resolved_libraries
 
     def get_source(
@@ -67,14 +66,14 @@ class PromptCompiler:
         self.resolver = Resolver(self.loader, ResolverCache())
 
     async def compile_from_file(
-        self, pal_file: Path, variables: Dict[str, Any] | None = None
+        self, pal_file: Path, variables: dict[str, Any] | None = None
     ) -> str:
         """Compile a PAL file into a prompt string."""
         prompt_assembly = await self.loader.load_prompt_assembly_async(pal_file)
         return await self.compile(prompt_assembly, variables, pal_file)
 
     def compile_from_file_sync(
-        self, pal_file: Path, variables: Dict[str, Any] | None = None
+        self, pal_file: Path, variables: dict[str, Any] | None = None
     ) -> str:
         """Synchronous version of compile_from_file."""
         return asyncio.run(self.compile_from_file(pal_file, variables))
@@ -82,7 +81,7 @@ class PromptCompiler:
     async def compile(
         self,
         prompt_assembly: PromptAssembly,
-        variables: Dict[str, Any] | None = None,
+        variables: dict[str, Any] | None = None,
         base_path: Path | None = None,
     ) -> str:
         """Compile a prompt assembly into a final prompt string."""
@@ -141,23 +140,39 @@ class PromptCompiler:
         return self._clean_compiled_prompt(compiled_prompt)
 
     def _check_missing_variables(
-        self, prompt_assembly: PromptAssembly, provided_vars: Dict[str, Any]
+        self, prompt_assembly: PromptAssembly, provided_vars: dict[str, Any]
     ) -> list[str]:
         """Check for missing required variables."""
         missing = []
         for var_def in prompt_assembly.variables:
-            if var_def.required and var_def.name not in provided_vars:
-                # Check if variable has a default value
-                if var_def.default is None:
-                    missing.append(var_def.name)
+            if (
+                var_def.required
+                and var_def.name not in provided_vars
+                and var_def.default is None
+            ):
+                missing.append(var_def.name)
         return missing
 
     def _type_check_variables(
-        self, prompt_assembly: PromptAssembly, variables: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, prompt_assembly: PromptAssembly, variables: dict[str, Any]
+    ) -> dict[str, Any]:
         """Type check and convert variables according to their definitions."""
         typed_vars = {}
         var_defs = {var.name: var for var in prompt_assembly.variables}
+
+        # Process provided variables
+        typed_vars.update(self._process_provided_variables(variables, var_defs))
+
+        # Add defaults for missing variables
+        self._add_default_variables(prompt_assembly.variables, typed_vars)
+
+        return typed_vars
+
+    def _process_provided_variables(
+        self, variables: dict[str, Any], var_defs: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Process and type-check provided variables."""
+        typed_vars = {}
 
         for name, value in variables.items():
             if name in var_defs:
@@ -178,67 +193,82 @@ class PromptCompiler:
                 # Variable not defined in schema, pass through as-is
                 typed_vars[name] = value
 
-        # Add default values for missing variables, and None for optional variables without defaults
-        for var_def in prompt_assembly.variables:
+        return typed_vars
+
+    def _add_default_variables(
+        self, var_definitions: list, typed_vars: dict[str, Any]
+    ) -> None:
+        """Add default values for missing variables."""
+        default_values = {
+            VariableType.STRING: "",
+            VariableType.LIST: [],
+            VariableType.DICT: {},
+            VariableType.BOOLEAN: False,
+            VariableType.INTEGER: 0,
+            VariableType.FLOAT: 0.0,
+        }
+
+        for var_def in var_definitions:
             if var_def.name not in typed_vars:
                 if var_def.default is not None:
                     typed_vars[var_def.name] = var_def.default
                 elif not var_def.required:
-                    # Set optional variables without defaults to appropriate falsy values
-                    if var_def.type == VariableType.STRING:
-                        typed_vars[var_def.name] = ""
-                    elif var_def.type == VariableType.LIST:
-                        typed_vars[var_def.name] = []
-                    elif var_def.type == VariableType.DICT:
-                        typed_vars[var_def.name] = {}
-                    elif var_def.type == VariableType.BOOLEAN:
-                        typed_vars[var_def.name] = False
-                    elif var_def.type == VariableType.INTEGER:
-                        typed_vars[var_def.name] = 0
-                    elif var_def.type == VariableType.FLOAT:
-                        typed_vars[var_def.name] = 0.0
-                    else:  # ANY or unknown types
-                        typed_vars[var_def.name] = None
-
-        return typed_vars
+                    typed_vars[var_def.name] = default_values.get(var_def.type)
 
     def _convert_variable(self, value: Any, var_type: VariableType) -> Any:
         """Convert a variable to the specified type."""
-        if var_type == VariableType.ANY:
-            return value
-        elif var_type == VariableType.STRING:
-            return str(value)
-        elif var_type == VariableType.INTEGER:
-            if isinstance(value, bool):
-                raise TypeError("Boolean cannot be converted to integer")
-            return int(value)
-        elif var_type == VariableType.FLOAT:
-            if isinstance(value, bool):
-                raise TypeError("Boolean cannot be converted to float")
-            return float(value)
-        elif var_type == VariableType.BOOLEAN:
-            if isinstance(value, str):
-                lower_val = value.lower()
-                if lower_val in ("true", "1", "yes", "on"):
-                    return True
-                elif lower_val in ("false", "0", "no", "off"):
-                    return False
-                else:
-                    raise ValueError(f"Cannot convert string '{value}' to boolean")
-            return bool(value)
-        elif var_type == VariableType.LIST:
-            if not isinstance(value, (list, tuple)):
-                raise TypeError(f"Expected list or tuple, got {type(value).__name__}")
-            return list(value)
-        elif var_type == VariableType.DICT:
-            if not isinstance(value, dict):
-                raise TypeError(f"Expected dict, got {type(value).__name__}")
-            return value
-        else:
+        converters = {
+            VariableType.ANY: lambda v: v,
+            VariableType.STRING: str,
+            VariableType.INTEGER: self._convert_to_int,
+            VariableType.FLOAT: self._convert_to_float,
+            VariableType.BOOLEAN: self._convert_to_bool,
+            VariableType.LIST: self._convert_to_list,
+            VariableType.DICT: self._convert_to_dict,
+        }
+
+        if var_type not in converters:
             raise ValueError(f"Unknown variable type: {var_type}")
 
+        return converters[var_type](value)
+
+    def _convert_to_int(self, value: Any) -> int:
+        """Convert value to integer."""
+        if isinstance(value, bool):
+            raise TypeError("Boolean cannot be converted to integer")
+        return int(value)
+
+    def _convert_to_float(self, value: Any) -> float:
+        """Convert value to float."""
+        if isinstance(value, bool):
+            raise TypeError("Boolean cannot be converted to float")
+        return float(value)
+
+    def _convert_to_bool(self, value: Any) -> bool:
+        """Convert value to boolean."""
+        if isinstance(value, str):
+            lower_val = value.lower()
+            if lower_val in ("true", "1", "yes", "on"):
+                return True
+            if lower_val in ("false", "0", "no", "off"):
+                return False
+            raise ValueError(f"Cannot convert string '{value}' to boolean")
+        return bool(value)
+
+    def _convert_to_list(self, value: Any) -> list:
+        """Convert value to list."""
+        if not isinstance(value, list | tuple):
+            raise TypeError(f"Expected list or tuple, got {type(value).__name__}")
+        return list(value)
+
+    def _convert_to_dict(self, value: Any) -> dict:
+        """Convert value to dict."""
+        if not isinstance(value, dict):
+            raise TypeError(f"Expected dict, got {type(value).__name__}")
+        return value
+
     def _create_jinja_environment(
-        self, resolved_libraries: Dict[str, ComponentLibrary]
+        self, resolved_libraries: dict[str, ComponentLibrary]
     ) -> Environment:
         """Create a configured Jinja2 environment."""
         loader = ComponentTemplateLoader(resolved_libraries)
@@ -259,8 +289,8 @@ class PromptCompiler:
         return env
 
     def _build_template_context(
-        self, resolved_libraries: Dict[str, ComponentLibrary], variables: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, resolved_libraries: dict[str, ComponentLibrary], variables: dict[str, Any]
+    ) -> dict[str, Any]:
         """Build the context for Jinja2 templating."""
         context = variables.copy()
 
@@ -277,9 +307,7 @@ class PromptCompiler:
         prompt = re.sub(r"\n\s*\n\s*\n+", "\n\n", prompt)
 
         # Strip leading and trailing whitespace
-        prompt = prompt.strip()
-
-        return prompt
+        return prompt.strip()
 
     def analyze_template_variables(self, prompt_assembly: PromptAssembly) -> set[str]:
         """Analyze template variables used in composition."""
@@ -302,10 +330,10 @@ class PromptCompiler:
                 if var in import_aliases:
                     # Skip import aliases (e.g., 'traits', 'reasoning')
                     continue
-                elif var in defined_vars:
+                if var in defined_vars:
                     # Skip defined variables
                     continue
-                elif "." in var:
+                if "." in var:
                     # This is a dotted reference like "alias.component"
                     alias = var.split(".")[0]
                     if alias not in import_aliases:

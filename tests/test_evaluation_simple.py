@@ -6,8 +6,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from pal.core.evaluation import EvaluationReporter, EvaluationRunner
 from pal.core.compiler import PromptCompiler
+from pal.core.evaluation import EvaluationReporter, EvaluationRunner
 from pal.core.executor import MockLLMClient, PromptExecutor
 from pal.core.loader import Loader
 

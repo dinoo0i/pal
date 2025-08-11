@@ -2,21 +2,16 @@
 
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock
 
 import pytest
 import yaml
 
 from pal.core.compiler import PromptCompiler
-from pal.core.loader import Loader
 from pal.exceptions.core import PALCompilerError, PALMissingVariableError
 from pal.models.schema import (
-    ComponentLibrary,
-    PromptAssembly,
     PALVariable,
+    PromptAssembly,
     VariableType,
-    PALComponent,
-    ComponentType,
 )
 
 
@@ -569,7 +564,7 @@ class TestPromptCleaning:
 
         # Should reduce multiple blank lines to at most 2
         assert "\n\n\n" not in cleaned
-        assert "Line 1\n\nLine 2\n\nLine 3" == cleaned
+        assert cleaned == "Line 1\n\nLine 2\n\nLine 3"
 
     def test_clean_leading_trailing_whitespace(self):
         """Test cleaning of leading and trailing whitespace."""

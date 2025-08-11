@@ -6,7 +6,7 @@ import json
 import re
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any
 
 import structlog
 
@@ -21,7 +21,6 @@ from .compiler import PromptCompiler
 from .executor import PromptExecutor
 from .loader import Loader
 
-
 logger = structlog.get_logger()
 
 
@@ -35,7 +34,7 @@ class AssertionResult:
         message: str,
         expected: Any = None,
         actual: Any = None,
-        metadata: Dict[str, Any] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         self.assertion_type = assertion_type
         self.passed = passed
@@ -52,7 +51,7 @@ class TestCaseResult:
         self,
         test_case: EvaluationTestCase,
         execution_result: ExecutionResult | None = None,
-        assertion_results: List[AssertionResult] | None = None,
+        assertion_results: list[AssertionResult] | None = None,
         error: str | None = None,
     ) -> None:
         self.test_case = test_case
@@ -66,7 +65,7 @@ class EvaluationResult:
     """Result of an evaluation suite."""
 
     def __init__(
-        self, evaluation_suite: EvaluationSuite, test_results: List[TestCaseResult]
+        self, evaluation_suite: EvaluationSuite, test_results: list[TestCaseResult]
     ) -> None:
         self.evaluation_suite = evaluation_suite
         self.test_results = test_results
@@ -82,15 +81,14 @@ class BaseAssertion(ABC):
     """Base class for evaluation assertions."""
 
     @abstractmethod
-    def evaluate(self, response: str, config: Dict[str, Any]) -> AssertionResult:
+    def evaluate(self, response: str, config: dict[str, Any]) -> AssertionResult:
         """Evaluate the assertion against a response."""
-        pass
 
 
 class ContainsAssertion(BaseAssertion):
     """Assert that response contains specific text."""
 
-    def evaluate(self, response: str, config: Dict[str, Any]) -> AssertionResult:
+    def evaluate(self, response: str, config: dict[str, Any]) -> AssertionResult:
         text = config.get("text", "")
         case_sensitive = config.get("case_sensitive", True)
 
@@ -117,7 +115,7 @@ class ContainsAssertion(BaseAssertion):
 class RegexMatchAssertion(BaseAssertion):
     """Assert that response matches a regex pattern."""
 
-    def evaluate(self, response: str, config: Dict[str, Any]) -> AssertionResult:
+    def evaluate(self, response: str, config: dict[str, Any]) -> AssertionResult:
         pattern = config.get("pattern", "")
         flags = config.get("flags", 0)
 
@@ -151,7 +149,7 @@ class RegexMatchAssertion(BaseAssertion):
 class JSONValidAssertion(BaseAssertion):
     """Assert that response is valid JSON."""
 
-    def evaluate(self, response: str, config: Dict[str, Any]) -> AssertionResult:
+    def evaluate(self, response: str, config: dict[str, Any]) -> AssertionResult:
         try:
             parsed = json.loads(response.strip())
             return AssertionResult(
@@ -175,7 +173,7 @@ class JSONValidAssertion(BaseAssertion):
 class JSONFieldEqualsAssertion(BaseAssertion):
     """Assert that a JSON field equals a specific value."""
 
-    def evaluate(self, response: str, config: Dict[str, Any]) -> AssertionResult:
+    def evaluate(self, response: str, config: dict[str, Any]) -> AssertionResult:
         path = config.get("path", "")
         expected_value = config.get("value")
 
@@ -221,10 +219,7 @@ class JSONFieldEqualsAssertion(BaseAssertion):
         current = data
 
         for part in parts:
-            if part.isdigit():
-                current = current[int(part)]
-            else:
-                current = current[part]
+            current = current[int(part)] if part.isdigit() else current[part]
 
         return current
 
@@ -232,7 +227,7 @@ class JSONFieldEqualsAssertion(BaseAssertion):
 class LengthAssertion(BaseAssertion):
     """Assert response length constraints."""
 
-    def evaluate(self, response: str, config: Dict[str, Any]) -> AssertionResult:
+    def evaluate(self, response: str, config: dict[str, Any]) -> AssertionResult:
         min_length = config.get("min_length")
         max_length = config.get("max_length")
         exact_length = config.get("exact_length")
@@ -278,7 +273,7 @@ class EvaluationRunner:
         self.executor = executor
 
         # Register built-in assertions
-        self.assertions: Dict[str, BaseAssertion] = {
+        self.assertions: dict[str, BaseAssertion] = {
             "contains": ContainsAssertion(),
             "regex_match": RegexMatchAssertion(),
             "json_valid": JSONValidAssertion(),
@@ -319,7 +314,7 @@ class EvaluationRunner:
             )
 
         # Run test cases
-        test_results: List[TestCaseResult] = []
+        test_results: list[TestCaseResult] = []
 
         for test_case in evaluation_suite.test_cases:
             test_result = await self._run_test_case(
@@ -422,7 +417,7 @@ class EvaluationReporter:
 
         return "\n".join(lines)
 
-    def generate_json_report(self, result: EvaluationResult) -> Dict[str, Any]:
+    def generate_json_report(self, result: EvaluationResult) -> dict[str, Any]:
         """Generate a JSON report."""
         return {
             "evaluation_suite": result.evaluation_suite.model_dump(),

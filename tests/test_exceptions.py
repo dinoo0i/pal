@@ -8,7 +8,7 @@ import pytest
 import yaml
 
 from pal.core.compiler import PromptCompiler
-from pal.core.executor import MockLLMClient, PromptExecutor
+from pal.core.executor import PromptExecutor
 from pal.core.loader import Loader
 from pal.core.resolver import Resolver
 from pal.exceptions.core import (
@@ -22,12 +22,9 @@ from pal.exceptions.core import (
     PALValidationError,
 )
 from pal.models.schema import (
-    ComponentLibrary,
-    PromptAssembly,
     PALVariable,
+    PromptAssembly,
     VariableType,
-    PALComponent,
-    ComponentType,
 )
 
 
@@ -345,7 +342,7 @@ class TestResolverExceptions:
             yaml.dump(lib_b_content, f)
 
         # Create assembly that creates circular dependency
-        assembly = PromptAssembly(
+        PromptAssembly(
             pal_version="1.0",
             id="circular-test",
             version="1.0.0",

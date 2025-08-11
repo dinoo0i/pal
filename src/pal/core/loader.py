@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any
 from urllib.parse import urlparse
 
 import httpx
@@ -33,20 +33,20 @@ class Loader:
         if self._http_client:
             await self._http_client.aclose()
 
-    def load_prompt_assembly(self, path_or_url: Union[str, Path]) -> PromptAssembly:
+    def load_prompt_assembly(self, path_or_url: str | Path) -> PromptAssembly:
         """Load and validate a .pal prompt assembly file."""
         return asyncio.run(self.load_prompt_assembly_async(path_or_url))
 
-    def load_component_library(self, path_or_url: Union[str, Path]) -> ComponentLibrary:
+    def load_component_library(self, path_or_url: str | Path) -> ComponentLibrary:
         """Load and validate a .pal.lib component library file."""
         return asyncio.run(self.load_component_library_async(path_or_url))
 
-    def load_evaluation_suite(self, path_or_url: Union[str, Path]) -> EvaluationSuite:
+    def load_evaluation_suite(self, path_or_url: str | Path) -> EvaluationSuite:
         """Load and validate a .eval.yaml evaluation suite file."""
         return asyncio.run(self.load_evaluation_suite_async(path_or_url))
 
     async def load_prompt_assembly_async(
-        self, path_or_url: Union[str, Path]
+        self, path_or_url: str | Path
     ) -> PromptAssembly:
         """Async version of load_prompt_assembly."""
         content = await self._load_content(path_or_url)
@@ -61,7 +61,7 @@ class Loader:
             ) from e
 
     async def load_component_library_async(
-        self, path_or_url: Union[str, Path]
+        self, path_or_url: str | Path
     ) -> ComponentLibrary:
         """Async version of load_component_library."""
         content = await self._load_content(path_or_url)
@@ -76,7 +76,7 @@ class Loader:
             ) from e
 
     async def load_evaluation_suite_async(
-        self, path_or_url: Union[str, Path]
+        self, path_or_url: str | Path
     ) -> EvaluationSuite:
         """Async version of load_evaluation_suite."""
         content = await self._load_content(path_or_url)
@@ -90,7 +90,7 @@ class Loader:
                 context={"validation_errors": e.errors(), "path": str(path_or_url)},
             ) from e
 
-    async def _load_content(self, path_or_url: Union[str, Path]) -> str:
+    async def _load_content(self, path_or_url: str | Path) -> str:
         """Load content from file path or URL."""
         path_str = str(path_or_url)
 
@@ -98,20 +98,21 @@ class Loader:
         parsed = urlparse(path_str)
         if parsed.scheme in ("http", "https"):
             return await self._load_from_url(path_str)
-        else:
-            return await self._load_from_file(Path(path_str))
+        return await self._load_from_file(Path(path_str))
 
     async def _load_from_file(self, path: Path) -> str:
         """Load content from local file."""
         try:
             # Use asyncio to avoid blocking on large files
             return await asyncio.to_thread(path.read_text, encoding="utf-8")
-        except FileNotFoundError:
-            raise PALLoadError(f"File not found: {path}", context={"path": str(path)})
-        except PermissionError:
+        except FileNotFoundError as e:
+            raise PALLoadError(
+                f"File not found: {path}", context={"path": str(path)}
+            ) from e
+        except PermissionError as e:
             raise PALLoadError(
                 f"Permission denied reading file: {path}", context={"path": str(path)}
-            )
+            ) from e
         except Exception as e:
             raise PALLoadError(
                 f"Failed to read file {path}: {e}",
@@ -143,7 +144,7 @@ class Loader:
                 context={"url": url, "error": str(e)},
             ) from e
 
-    def _parse_yaml(self, content: str, source: Union[str, Path]) -> Dict[str, Any]:
+    def _parse_yaml(self, content: str, source: str | Path) -> dict[str, Any]:
         """Parse YAML content with error handling."""
         try:
             data = yaml.safe_load(content)

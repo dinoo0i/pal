@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import asyncio
 from pathlib import Path
-from typing import Any, Dict, Set, Union
 
 from ..exceptions.core import PALCircularDependencyError, PALResolverError
 from ..models.schema import ComponentLibrary, PromptAssembly
@@ -15,7 +13,7 @@ class ResolverCache:
     """Cache for resolved dependencies to avoid redundant loading."""
 
     def __init__(self) -> None:
-        self._cache: Dict[str, ComponentLibrary] = {}
+        self._cache: dict[str, ComponentLibrary] = {}
 
     def get(self, path_or_url: str) -> ComponentLibrary | None:
         """Get cached library by path or URL."""
@@ -34,9 +32,9 @@ class DependencyGraph:
     """Tracks dependency relationships to detect cycles."""
 
     def __init__(self) -> None:
-        self._dependencies: Dict[str, Set[str]] = {}
-        self._visiting: Set[str] = set()
-        self._visited: Set[str] = set()
+        self._dependencies: dict[str, set[str]] = {}
+        self._visiting: set[str] = set()
+        self._visited: set[str] = set()
 
     def add_dependency(self, dependent: str, dependency: str) -> None:
         """Add a dependency relationship."""
@@ -85,9 +83,9 @@ class Resolver:
 
     async def resolve_dependencies(
         self, prompt_assembly: PromptAssembly, base_path: Path | None = None
-    ) -> Dict[str, ComponentLibrary]:
+    ) -> dict[str, ComponentLibrary]:
         """Resolve all dependencies for a prompt assembly."""
-        resolved: Dict[str, ComponentLibrary] = {}
+        resolved: dict[str, ComponentLibrary] = {}
 
         # Reset dependency graph for this resolution
         self.dependency_graph = DependencyGraph()
@@ -108,7 +106,7 @@ class Resolver:
         return resolved
 
     async def _resolve_single_dependency(
-        self, path_or_url: Union[str, Path], base_path: Path | None, dependent_id: str
+        self, path_or_url: str | Path, base_path: Path | None, dependent_id: str
     ) -> ComponentLibrary:
         """Resolve a single dependency."""
         # Normalize path
@@ -142,8 +140,8 @@ class Resolver:
         return library
 
     def _resolve_path(
-        self, path_or_url: Union[str, Path], base_path: Path | None
-    ) -> Union[str, Path]:
+        self, path_or_url: str | Path, base_path: Path | None
+    ) -> str | Path:
         """Resolve relative paths relative to base_path."""
         path_str = str(path_or_url)
 
@@ -171,7 +169,7 @@ class Resolver:
     def validate_references(
         self,
         prompt_assembly: PromptAssembly,
-        resolved_libraries: Dict[str, ComponentLibrary],
+        resolved_libraries: dict[str, ComponentLibrary],
     ) -> list[str]:
         """Validate that all component references in composition exist."""
         errors = []

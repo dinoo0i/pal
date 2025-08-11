@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Literal
 from urllib.parse import urlparse
 
 from pydantic import (
@@ -12,7 +12,6 @@ from pydantic import (
     ConfigDict,
     Field,
     field_validator,
-    model_validator,
 )
 
 
@@ -70,7 +69,7 @@ class PALComponent(BaseModel):
     name: str = Field(..., pattern=r"^[a-zA-Z_][a-zA-Z0-9_]*$")
     description: str
     content: str
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("name")
     @classmethod
@@ -91,14 +90,14 @@ class ComponentLibrary(BaseModel):
     version: str = Field(..., pattern=r"^\d+\.\d+\.\d+$")
     description: str
     type: ComponentType
-    components: List[PALComponent]
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    components: list[PALComponent]
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("components")
     @classmethod
     def validate_unique_component_names(
-        cls, v: List[PALComponent]
-    ) -> List[PALComponent]:
+        cls, v: list[PALComponent]
+    ) -> list[PALComponent]:
         """Ensure component names are unique within the library."""
         names = [comp.name for comp in v]
         if len(names) != len(set(names)):
@@ -117,16 +116,14 @@ class PromptAssembly(BaseModel):
     version: str = Field(..., pattern=r"^\d+\.\d+\.\d+$")
     description: str
     author: str | None = None
-    imports: Dict[str, Union[str, Path]] = Field(default_factory=dict)
-    variables: List[PALVariable] = Field(default_factory=list)
-    composition: List[str]
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    imports: dict[str, str | Path] = Field(default_factory=dict)
+    variables: list[PALVariable] = Field(default_factory=list)
+    composition: list[str]
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("imports")
     @classmethod
-    def validate_imports(
-        cls, v: Dict[str, Union[str, Path]]
-    ) -> Dict[str, Union[str, Path]]:
+    def validate_imports(cls, v: dict[str, str | Path]) -> dict[str, str | Path]:
         """Validate import paths and URLs."""
         for alias, path_or_url in v.items():
             if not alias.isidentifier():
@@ -149,7 +146,7 @@ class PromptAssembly(BaseModel):
 
     @field_validator("variables")
     @classmethod
-    def validate_unique_variable_names(cls, v: List[PALVariable]) -> List[PALVariable]:
+    def validate_unique_variable_names(cls, v: list[PALVariable]) -> list[PALVariable]:
         """Ensure variable names are unique within the assembly."""
         names = [var.name for var in v]
         if len(names) != len(set(names)):
@@ -159,7 +156,7 @@ class PromptAssembly(BaseModel):
 
     @field_validator("composition")
     @classmethod
-    def validate_composition_not_empty(cls, v: List[str]) -> List[str]:
+    def validate_composition_not_empty(cls, v: list[str]) -> list[str]:
         """Ensure composition is not empty."""
         if not v:
             raise ValueError("Composition cannot be empty")
@@ -174,7 +171,7 @@ class EvaluationAssertion(BaseModel):
     type: str
     name: str | None = None
     description: str | None = None
-    config: Dict[str, Any] = Field(default_factory=dict)
+    config: dict[str, Any] = Field(default_factory=dict)
 
 
 class EvaluationTestCase(BaseModel):
@@ -184,9 +181,9 @@ class EvaluationTestCase(BaseModel):
 
     name: str
     description: str | None = None
-    variables: Dict[str, Any]
-    assertions: List[EvaluationAssertion]
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    variables: dict[str, Any]
+    assertions: list[EvaluationAssertion]
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class EvaluationSuite(BaseModel):
@@ -198,14 +195,14 @@ class EvaluationSuite(BaseModel):
     prompt_id: str
     target_version: str = Field(pattern=r"^\d+\.\d+\.\d+$")
     description: str | None = None
-    test_cases: List[EvaluationTestCase]
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    test_cases: list[EvaluationTestCase]
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("test_cases")
     @classmethod
     def validate_unique_test_names(
-        cls, v: List[EvaluationTestCase]
-    ) -> List[EvaluationTestCase]:
+        cls, v: list[EvaluationTestCase]
+    ) -> list[EvaluationTestCase]:
         """Ensure test case names are unique within the suite."""
         names = [test.name for test in v]
         if len(names) != len(set(names)):
@@ -224,7 +221,7 @@ class ExecutionResult(BaseModel):
     model: str
     compiled_prompt: str
     response: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
     execution_time_ms: float
     input_tokens: int | None = None
     output_tokens: int | None = None

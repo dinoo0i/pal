@@ -3,14 +3,12 @@
 import json
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
 
 import pytest
 import yaml
 from click.testing import CliRunner
 
 from pal.cli.main import cli
-from pal.models.schema import ExecutionResult
 
 
 @pytest.fixture
@@ -503,7 +501,7 @@ class TestEvaluateCommand:
         output_file = temp_dir / "eval_report.txt"
 
         runner = CliRunner()
-        result = runner.invoke(
+        runner.invoke(
             cli,
             [
                 "evaluate",

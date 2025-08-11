@@ -7,23 +7,26 @@ __author__ = "Nicolas Iglesias"
 __email__ = "nfiglesias@gmail.com"
 
 from .core.compiler import PromptCompiler
-from .core.evaluation import EvaluationRunner, EvaluationReporter
-from .core.executor import PromptExecutor, MockLLMClient, OpenAIClient, AnthropicClient
+from .core.evaluation import EvaluationReporter, EvaluationRunner
+from .core.executor import AnthropicClient, MockLLMClient, OpenAIClient, PromptExecutor
 from .core.loader import Loader
 from .core.resolver import Resolver
 from .exceptions.core import (
-    PALError,
-    PALValidationError,
-    PALLoadError,
-    PALResolverError,
+    PALCircularDependencyError,
     PALCompilerError,
+    PALError,
     PALExecutorError,
+    PALLoadError,
+    PALMissingComponentError,
+    PALMissingVariableError,
+    PALResolverError,
+    PALValidationError,
 )
 from .models.schema import (
-    PromptAssembly,
     ComponentLibrary,
     EvaluationSuite,
     ExecutionResult,
+    PromptAssembly,
 )
 
 __all__ = [
@@ -50,4 +53,7 @@ __all__ = [
     "PALResolverError",
     "PALCompilerError",
     "PALExecutorError",
+    "PALMissingVariableError",
+    "PALMissingComponentError",
+    "PALCircularDependencyError",
 ]

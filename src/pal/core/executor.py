@@ -6,16 +6,15 @@ import asyncio
 import json
 import time
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, Protocol
+from typing import Any, Protocol
 from uuid import uuid4
 
 import structlog
 
 from ..exceptions.core import PALExecutorError
 from ..models.schema import ExecutionResult, PromptAssembly
-
 
 logger = structlog.get_logger()
 
@@ -30,7 +29,7 @@ class LLMClient(Protocol):
         temperature: float = 0.7,
         max_tokens: int | None = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate a response from the LLM."""
         ...
 
@@ -46,9 +45,8 @@ class BaseLLMClient(ABC):
         temperature: float = 0.7,
         max_tokens: int | None = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate a response from the LLM."""
-        pass
 
 
 class MockLLMClient(BaseLLMClient):
@@ -67,7 +65,7 @@ class MockLLMClient(BaseLLMClient):
         temperature: float = 0.7,
         max_tokens: int | None = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate a mock response."""
         self.call_count += 1
         self.last_prompt = prompt
@@ -93,11 +91,11 @@ class OpenAIClient(BaseLLMClient):
             import openai
 
             self.client = openai.AsyncOpenAI(api_key=api_key)
-        except ImportError:
+        except ImportError as e:
             raise PALExecutorError(
                 "OpenAI package not installed. Install with: pip install openai",
                 context={"client_type": "OpenAI"},
-            )
+            ) from e
 
     async def generate(
         self,
@@ -106,7 +104,7 @@ class OpenAIClient(BaseLLMClient):
         temperature: float = 0.7,
         max_tokens: int | None = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate response using OpenAI API."""
         try:
             response = await self.client.chat.completions.create(
@@ -143,11 +141,11 @@ class AnthropicClient(BaseLLMClient):
             import anthropic
 
             self.client = anthropic.AsyncAnthropic(api_key=api_key)
-        except ImportError:
+        except ImportError as e:
             raise PALExecutorError(
                 "Anthropic package not installed. Install with: pip install anthropic",
                 context={"client_type": "Anthropic"},
-            )
+            ) from e
 
     async def generate(
         self,
@@ -156,7 +154,7 @@ class AnthropicClient(BaseLLMClient):
         temperature: float = 0.7,
         max_tokens: int | None = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate response using Anthropic API."""
         try:
             response = await self.client.messages.create(
@@ -203,7 +201,7 @@ class PromptExecutor:
         """Execute a compiled prompt and return structured results."""
         execution_id = str(uuid4())
         start_time = time.time()
-        timestamp = datetime.now(timezone.utc).isoformat()
+        timestamp = datetime.now(UTC).isoformat()
 
         # Pre-execution logging
         await self._log_pre_execution(
@@ -306,7 +304,7 @@ class PromptExecutor:
         compiled_prompt: str,
         temperature: float,
         max_tokens: int | None,
-        kwargs: Dict[str, Any],
+        kwargs: dict[str, Any],
     ) -> None:
         """Log pre-execution information."""
         log_data = {
@@ -317,7 +315,7 @@ class PromptExecutor:
             "temperature": temperature,
             "max_tokens": max_tokens,
             "compiled_prompt_length": len(compiled_prompt),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         logger.info("Starting prompt execution", **log_data)
@@ -366,7 +364,7 @@ class PromptExecutor:
             log_data["event"] = "prompt_execution_error"
             await self._write_to_log_file(log_data)
 
-    async def _write_to_log_file(self, data: Dict[str, Any]) -> None:
+    async def _write_to_log_file(self, data: dict[str, Any]) -> None:
         """Write log data to file."""
         if not self.log_file:
             return

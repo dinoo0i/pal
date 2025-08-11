@@ -1,6 +1,5 @@
 """Basic tests to verify PAL functionality."""
 
-import json
 import tempfile
 from pathlib import Path
 
@@ -10,6 +9,7 @@ from pal import (
     ComponentLibrary,
     Loader,
     MockLLMClient,
+    PALMissingVariableError,
     PALValidationError,
     PromptAssembly,
     PromptCompiler,
@@ -131,7 +131,7 @@ class TestCompiler:
         compiler = PromptCompiler()
 
         # Don't provide required variable
-        with pytest.raises(Exception):  # Should raise PALMissingVariableError
+        with pytest.raises(PALMissingVariableError):
             await compiler.compile_from_file(sample_prompt, {})
 
     def test_sync_compile(self, sample_prompt):
