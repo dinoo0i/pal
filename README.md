@@ -2,6 +2,8 @@
 
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![CI](https://github.com/cyqlelabs/pal/workflows/CI/badge.svg)](https://github.com/cyqlelabs/pal/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/cyqlelabs/pal/branch/main/graph/badge.svg)](https://codecov.io/gh/cyqlelabs/pal)
 
 PAL (Prompt Assembly Language) is a framework for managing LLM prompts as versioned, composable software artifacts. It treats prompt engineering with the same rigor as software engineering, focusing on modularity, versioning, and testability.
 
@@ -214,6 +216,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [ ] **PAL Registry**: Centralized repository for sharing components
 - [ ] **Visual Builder**: Drag-and-drop prompt composition interface
 - [ ] **IDE Extensions**: VS Code and other editor integrations
-- [ ] **Advanced Evaluations**: Semantic similarity and custom metrics
-- [ ] **Workflow Orchestration**: Multi-step prompt chains and agent workflows
 
