@@ -457,6 +457,55 @@ class TestMissingVariableValidation:
 
         assert "Value: default_value" in result
 
+    @pytest.mark.asyncio
+    async def test_optional_variable_without_default(self):
+        """Test that optional variables without defaults work correctly."""
+        variables = [
+            PALVariable(
+                name="optional_str",
+                type=VariableType.STRING,
+                description="An optional string variable",
+                required=False,
+            ),
+            PALVariable(
+                name="optional_list",
+                type=VariableType.LIST,
+                description="An optional list variable",
+                required=False,
+            ),
+        ]
+
+        assembly = PromptAssembly(
+            pal_version="1.0",
+            id="optional-no-default-test",
+            version="1.0.0",
+            description="Optional variable without default test",
+            variables=variables,
+            composition=[
+                "{% if optional_str %}String: {{ optional_str }}{% endif %}",
+                "{% if optional_list %}List: {{ optional_list }}{% endif %}",
+                "Always shown text",
+            ],
+        )
+
+        compiler = PromptCompiler()
+        result = await compiler.compile(assembly, {})  # No variables provided
+
+        # Optional variables should be empty but not cause errors
+        assert "String:" not in result  # Empty string is falsy
+        assert "List:" not in result  # Empty list is falsy
+        assert "Always shown text" in result
+
+        # Test with values provided
+        result_with_values = await compiler.compile(
+            assembly,
+            {"optional_str": "test value", "optional_list": ["item1", "item2"]},
+        )
+
+        assert "String: test value" in result_with_values
+        assert "List: ['item1', 'item2']" in result_with_values
+        assert "Always shown text" in result_with_values
+
 
 class TestErrorHandling:
     """Test error handling in compilation."""

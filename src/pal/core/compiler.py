@@ -178,10 +178,27 @@ class PromptCompiler:
                 # Variable not defined in schema, pass through as-is
                 typed_vars[name] = value
 
-        # Add default values for missing variables
+        # Add default values for missing variables, and None for optional variables without defaults
         for var_def in prompt_assembly.variables:
-            if var_def.name not in typed_vars and var_def.default is not None:
-                typed_vars[var_def.name] = var_def.default
+            if var_def.name not in typed_vars:
+                if var_def.default is not None:
+                    typed_vars[var_def.name] = var_def.default
+                elif not var_def.required:
+                    # Set optional variables without defaults to appropriate falsy values
+                    if var_def.type == VariableType.STRING:
+                        typed_vars[var_def.name] = ""
+                    elif var_def.type == VariableType.LIST:
+                        typed_vars[var_def.name] = []
+                    elif var_def.type == VariableType.DICT:
+                        typed_vars[var_def.name] = {}
+                    elif var_def.type == VariableType.BOOLEAN:
+                        typed_vars[var_def.name] = False
+                    elif var_def.type == VariableType.INTEGER:
+                        typed_vars[var_def.name] = 0
+                    elif var_def.type == VariableType.FLOAT:
+                        typed_vars[var_def.name] = 0.0
+                    else:  # ANY or unknown types
+                        typed_vars[var_def.name] = None
 
         return typed_vars
 
