@@ -1,0 +1,73 @@
+[project]
+name = "pal"
+version = "0.1.0"
+description = "Prompt Assembly Language - A framework for managing LLM prompts as versioned, composable software artifacts"
+readme = "README.md"
+authors = [
+    { name = "Nicolas Iglesias", email = "nfiglesias@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.8.0",
+    "pyyaml>=6.0.1",
+    "jinja2>=3.1.4",
+    "click>=8.1.7",
+    "httpx>=0.27.0",
+    "rich>=13.7.0",
+    "structlog>=24.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=5.0.0",
+    "mypy>=1.11.0",
+    "ruff>=0.5.0",
+    "pre-commit>=3.7.0",
+]
+test = [
+    "pytest>=8.3.0", 
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=5.0.0",
+]
+
+[project.scripts]
+pal = "pal.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pal"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+select = ["E", "F", "W", "C90", "I", "N", "UP", "B", "A", "C4", "PIE", "RET", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_functions = ["test_*"]
+addopts = "--strict-markers --strict-config --cov=pal --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["*/tests/*", "*/__init__.py"]

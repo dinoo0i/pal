@@ -1,0 +1,309 @@
+"""PAL prompt compilation with Jinja2 templating."""
+
+from __future__ import annotations
+
+import asyncio
+import re
+from pathlib import Path
+from typing import Any, Dict
+
+from jinja2 import (
+    BaseLoader,
+    Environment,
+    StrictUndefined,
+    Template,
+    TemplateError,
+    meta,
+)
+
+from ..exceptions.core import (
+    PALCompilerError,
+    PALMissingComponentError,
+    PALMissingVariableError,
+)
+from ..models.schema import ComponentLibrary, PromptAssembly, VariableType
+from .loader import Loader
+from .resolver import Resolver, ResolverCache
+
+
+class ComponentTemplateLoader(BaseLoader):
+    """Custom Jinja2 loader for PAL components."""
+
+    def __init__(self, resolved_libraries: Dict[str, ComponentLibrary]) -> None:
+        self.resolved_libraries = resolved_libraries
+
+    def get_source(
+        self, environment: Environment, template: str
+    ) -> tuple[str, str | None, bool]:
+        """Get template source for component references."""
+        if "." not in template:
+            raise TemplateError(
+                f"Component reference must be in format 'alias.component', got: {template}"
+            )
+
+        alias, component_name = template.split(".", 1)
+
+        if alias not in self.resolved_libraries:
+            raise TemplateError(f"Unknown import alias: {alias}")
+
+        library = self.resolved_libraries[alias]
+
+        for component in library.components:
+            if component.name == component_name:
+                return component.content, None, lambda: True
+
+        available = [comp.name for comp in library.components]
+        raise TemplateError(
+            f"Component '{component_name}' not found in library '{alias}'. Available: {available}"
+        )
+
+
+class PromptCompiler:
+    """Compiles PAL prompt assemblies into executable prompt strings."""
+
+    def __init__(self, loader: Loader | None = None) -> None:
+        """Initialize compiler with optional loader."""
+        self.loader = loader or Loader()
+        self.resolver = Resolver(self.loader, ResolverCache())
+
+    async def compile_from_file(
+        self, pal_file: Path, variables: Dict[str, Any] | None = None
+    ) -> str:
+        """Compile a PAL file into a prompt string."""
+        prompt_assembly = await self.loader.load_prompt_assembly_async(pal_file)
+        return await self.compile(prompt_assembly, variables, pal_file)
+
+    def compile_from_file_sync(
+        self, pal_file: Path, variables: Dict[str, Any] | None = None
+    ) -> str:
+        """Synchronous version of compile_from_file."""
+        return asyncio.run(self.compile_from_file(pal_file, variables))
+
+    async def compile(
+        self,
+        prompt_assembly: PromptAssembly,
+        variables: Dict[str, Any] | None = None,
+        base_path: Path | None = None,
+    ) -> str:
+        """Compile a prompt assembly into a final prompt string."""
+        variables = variables or {}
+
+        # Resolve dependencies
+        resolved_libraries = await self.resolver.resolve_dependencies(
+            prompt_assembly, base_path
+        )
+
+        # Validate all component references exist
+        validation_errors = self.resolver.validate_references(
+            prompt_assembly, resolved_libraries
+        )
+        if validation_errors:
+            raise PALMissingComponentError(
+                f"Missing component references in {prompt_assembly.id}",
+                context={"errors": validation_errors},
+            )
+
+        # Validate required variables are provided
+        missing_vars = self._check_missing_variables(prompt_assembly, variables)
+        if missing_vars:
+            raise PALMissingVariableError(
+                f"Missing required variables for {prompt_assembly.id}: {missing_vars}",
+                context={"missing_variables": missing_vars},
+            )
+
+        # Type check and convert variables
+        typed_variables = self._type_check_variables(prompt_assembly, variables)
+
+        # Create Jinja2 environment
+        env = self._create_jinja_environment(resolved_libraries)
+
+        # Build context for templating
+        context = self._build_template_context(resolved_libraries, typed_variables)
+
+        # Join composition items and compile as a single template
+        # This allows multi-line Jinja constructs to work properly
+        full_composition = "\n".join(prompt_assembly.composition)
+
+        try:
+            template = env.from_string(full_composition)
+            compiled_prompt = template.render(**context)
+        except TemplateError as e:
+            raise PALCompilerError(
+                f"Template error in composition: {e}",
+                context={
+                    "composition": full_composition[:500] + "..."
+                    if len(full_composition) > 500
+                    else full_composition,
+                    "error": str(e),
+                    "prompt_id": prompt_assembly.id,
+                },
+            ) from e
+        return self._clean_compiled_prompt(compiled_prompt)
+
+    def _check_missing_variables(
+        self, prompt_assembly: PromptAssembly, provided_vars: Dict[str, Any]
+    ) -> list[str]:
+        """Check for missing required variables."""
+        missing = []
+        for var_def in prompt_assembly.variables:
+            if var_def.required and var_def.name not in provided_vars:
+                # Check if variable has a default value
+                if var_def.default is None:
+                    missing.append(var_def.name)
+        return missing
+
+    def _type_check_variables(
+        self, prompt_assembly: PromptAssembly, variables: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Type check and convert variables according to their definitions."""
+        typed_vars = {}
+        var_defs = {var.name: var for var in prompt_assembly.variables}
+
+        for name, value in variables.items():
+            if name in var_defs:
+                var_def = var_defs[name]
+                try:
+                    typed_vars[name] = self._convert_variable(value, var_def.type)
+                except (ValueError, TypeError) as e:
+                    raise PALCompilerError(
+                        f"Type error for variable '{name}': expected {var_def.type}, got {type(value).__name__}",
+                        context={
+                            "variable": name,
+                            "expected_type": var_def.type,
+                            "actual_type": type(value).__name__,
+                            "value": str(value),
+                        },
+                    ) from e
+            else:
+                # Variable not defined in schema, pass through as-is
+                typed_vars[name] = value
+
+        # Add default values for missing variables
+        for var_def in prompt_assembly.variables:
+            if var_def.name not in typed_vars and var_def.default is not None:
+                typed_vars[var_def.name] = var_def.default
+
+        return typed_vars
+
+    def _convert_variable(self, value: Any, var_type: VariableType) -> Any:
+        """Convert a variable to the specified type."""
+        if var_type == VariableType.ANY:
+            return value
+        elif var_type == VariableType.STRING:
+            return str(value)
+        elif var_type == VariableType.INTEGER:
+            if isinstance(value, bool):
+                raise TypeError("Boolean cannot be converted to integer")
+            return int(value)
+        elif var_type == VariableType.FLOAT:
+            if isinstance(value, bool):
+                raise TypeError("Boolean cannot be converted to float")
+            return float(value)
+        elif var_type == VariableType.BOOLEAN:
+            if isinstance(value, str):
+                lower_val = value.lower()
+                if lower_val in ("true", "1", "yes", "on"):
+                    return True
+                elif lower_val in ("false", "0", "no", "off"):
+                    return False
+                else:
+                    raise ValueError(f"Cannot convert string '{value}' to boolean")
+            return bool(value)
+        elif var_type == VariableType.LIST:
+            if not isinstance(value, (list, tuple)):
+                raise TypeError(f"Expected list or tuple, got {type(value).__name__}")
+            return list(value)
+        elif var_type == VariableType.DICT:
+            if not isinstance(value, dict):
+                raise TypeError(f"Expected dict, got {type(value).__name__}")
+            return value
+        else:
+            raise ValueError(f"Unknown variable type: {var_type}")
+
+    def _create_jinja_environment(
+        self, resolved_libraries: Dict[str, ComponentLibrary]
+    ) -> Environment:
+        """Create a configured Jinja2 environment."""
+        loader = ComponentTemplateLoader(resolved_libraries)
+
+        env = Environment(
+            loader=loader,
+            undefined=StrictUndefined,  # Fail on undefined variables
+            trim_blocks=True,
+            lstrip_blocks=True,
+            keep_trailing_newline=True,
+        )
+
+        # Add custom filters if needed
+        env.filters["upper"] = str.upper
+        env.filters["lower"] = str.lower
+        env.filters["title"] = str.title
+
+        return env
+
+    def _build_template_context(
+        self, resolved_libraries: Dict[str, ComponentLibrary], variables: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Build the context for Jinja2 templating."""
+        context = variables.copy()
+
+        # Add component access via aliases
+        for alias, library in resolved_libraries.items():
+            component_dict = {comp.name: comp.content for comp in library.components}
+            context[alias] = component_dict
+
+        return context
+
+    def _clean_compiled_prompt(self, prompt: str) -> str:
+        """Clean up the compiled prompt string."""
+        # Remove excessive blank lines (more than 2 consecutive)
+        prompt = re.sub(r"\n\s*\n\s*\n+", "\n\n", prompt)
+
+        # Strip leading and trailing whitespace
+        prompt = prompt.strip()
+
+        return prompt
+
+    def analyze_template_variables(self, prompt_assembly: PromptAssembly) -> set[str]:
+        """Analyze template variables used in composition."""
+        env = Environment()
+        variables = set()
+
+        # Join all composition items for proper analysis
+        full_composition = "\n".join(prompt_assembly.composition)
+
+        try:
+            parsed = env.parse(full_composition)
+            all_vars = meta.find_undeclared_variables(parsed)
+
+            # Filter out known component imports and defined variables
+            import_aliases = set(prompt_assembly.imports.keys())
+            defined_vars = {var.name for var in prompt_assembly.variables}
+
+            # Only return variables that aren't component imports or defined variables
+            for var in all_vars:
+                if var in import_aliases:
+                    # Skip import aliases (e.g., 'traits', 'reasoning')
+                    continue
+                elif var in defined_vars:
+                    # Skip defined variables
+                    continue
+                elif "." in var:
+                    # This is a dotted reference like "alias.component"
+                    alias = var.split(".")[0]
+                    if alias not in import_aliases:
+                        variables.add(var)
+                else:
+                    # This is a simple variable that's truly undeclared
+                    variables.add(var)
+
+        except TemplateError:
+            # Fallback to item-by-item analysis if full parsing fails
+            for item in prompt_assembly.composition:
+                try:
+                    parsed = env.parse(item)
+                    variables.update(meta.find_undeclared_variables(parsed))
+                except TemplateError:
+                    continue
+
+        return variables
