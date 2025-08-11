@@ -208,9 +208,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🆘 Support
 
-- 📚 [Documentation](https://pal-framework.readthedocs.io/)
-- 🐛 [Issues](https://github.com/pal-framework/pal/issues)
-- 💬 [Discussions](https://github.com/pal-framework/pal/discussions)
+- 📚 [Documentation](#)
+- 🐛 [Issues](https://github.com/cyqlelabs/pal/issues)
+- 💬 [Discussions](https://github.com/cyqlelabs/pal/discussions)
 
 ## 🗺️ Roadmap
 

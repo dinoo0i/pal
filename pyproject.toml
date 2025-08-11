@@ -1,5 +1,5 @@
 [project]
-name = "pal-py"
+name = "pal-framework"
 version = "0.0.1"
 description = "Prompt Assembly Language - A framework for managing LLM prompts as versioned, composable software artifacts"
 readme = "README.md"
