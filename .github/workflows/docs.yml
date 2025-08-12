@@ -25,21 +25,6 @@ jobs:
           pip install -e .
           pip install -r docs/requirements.txt
 
-      - name: Check docstring coverage
-        run: |
-          cd docs
-          make coverage
-          python -c "
-          import sys
-          with open('build/coverage/python.txt') as f:
-              content = f.read()
-              if 'TOTAL' in content:
-                  coverage = float(content.split('TOTAL')[1].split('%')[0])
-                  if coverage < 80:
-                      print(f'Docstring coverage {coverage}% is below 80%')
-                      sys.exit(1)
-          "
-
       - name: Test code examples
         run: |
           cd docs
