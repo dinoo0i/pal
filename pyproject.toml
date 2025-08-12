@@ -1,6 +1,6 @@
 [project]
 name = "pal-framework"
-version = "0.0.3"
+dynamic = ["version"]
 description = "Prompt Assembly Language - A framework for managing LLM prompts as versioned, composable software artifacts"
 readme = "README.md"
 authors = [
@@ -67,8 +67,11 @@ all = ["openai>=1.0.0", "anthropic>=0.18.0"]
 pal = "pal.cli:main"
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pal"]
@@ -114,8 +117,11 @@ omit = ["*/tests/*", "*/__init__.py"]
 dev = [
     "doc8>=1.1.0",
     "furo>=2024.8.0",
+    "hatch-vcs>=0.5.0",
     "myst-parser>=4.0.0",
     "pytest>=8.3.0",
+    "pytest-asyncio>=1.1.0",
+    "pytest-cov>=6.2.1",
     "pytest-doctest-custom>=1.0.0",
     "sphinx>=8.1.0",
     "sphinx-autoapi>=3.3.0",

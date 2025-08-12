@@ -6,11 +6,22 @@ import sys
 # Add project root to path for autodoc
 sys.path.insert(0, os.path.abspath("../.."))
 
+# Import version from package
+try:
+    from importlib.metadata import version
+    release = version("pal-framework")
+except ImportError:
+    try:
+        from importlib_metadata import version
+        release = version("pal-framework")
+    except ImportError:
+        # Fallback if package not installed
+        release = "dev"
+
 # Project information
 project = "PAL Framework"
 copyright_info = "2025, Nicolas Iglesias"
 author = "Nicolas Iglesias"
-release = "0.0.2"
 
 # Extensions
 extensions = [

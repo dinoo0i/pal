@@ -2,7 +2,12 @@
 Prompt Assembly Language (PAL) - A framework for managing LLM prompts as versioned, composable software artifacts.
 """
 
-__version__ = "0.1.0"
+try:
+    from importlib.metadata import version
+    __version__ = version("pal-framework")
+except ImportError:
+    from importlib_metadata import version
+    __version__ = version("pal-framework")
 __author__ = "Nicolas Iglesias"
 __email__ = "nfiglesias@gmail.com"
 
