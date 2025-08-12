@@ -4,3 +4,4 @@ __pycache__/
 docs/build/
 coverage.xml
 docs/_build
+.coverage
