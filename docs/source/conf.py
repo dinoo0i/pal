@@ -8,17 +8,20 @@ sys.path.insert(0, os.path.abspath("../.."))
 
 # Import version from package
 try:
-    from importlib.metadata import version
+    from importlib.metadata import version as get_version
 
-    release = version("pal-framework")
+    release = get_version("pal-framework")
 except ImportError:
     try:
-        from importlib_metadata import version
+        from importlib_metadata import version as get_version
 
-        release = version("pal-framework")
+        release = get_version("pal-framework")
     except ImportError:
         # Fallback if package not installed
         release = "dev"
+
+# The short X.Y version
+version = release
 
 # Project information
 project = "PAL Framework"
