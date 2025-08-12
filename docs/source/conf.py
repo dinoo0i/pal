@@ -14,15 +14,15 @@ release = "0.0.2"
 
 # Extensions
 extensions = [
-    "sphinx.ext.autodoc",        # Auto-generate docs from docstrings
-    "sphinx.ext.napoleon",        # Support Google/NumPy style docstrings
-    "sphinx.ext.viewcode",        # Add links to source code
-    "sphinx.ext.intersphinx",     # Link to other projects' docs
-    "sphinx.ext.doctest",         # Test code snippets in docs
-    "sphinx.ext.coverage",        # Check docstring coverage
-    "sphinx_autodoc_typehints",   # Add type hints to docs
-    "myst_parser",               # Support Markdown files
-    "sphinx_copybutton",         # Add copy button to code blocks
+    "sphinx.ext.autodoc",  # Auto-generate docs from docstrings
+    "sphinx.ext.napoleon",  # Support Google/NumPy style docstrings
+    "sphinx.ext.viewcode",  # Add links to source code
+    "sphinx.ext.intersphinx",  # Link to other projects' docs
+    "sphinx.ext.doctest",  # Test code snippets in docs
+    "sphinx.ext.coverage",  # Check docstring coverage
+    "sphinx_autodoc_typehints",  # Add type hints to docs
+    "myst_parser",  # Support Markdown files
+    "sphinx_copybutton",  # Add copy button to code blocks
 ]
 
 # Autodoc configuration
