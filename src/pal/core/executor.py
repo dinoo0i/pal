@@ -50,9 +50,30 @@ class BaseLLMClient(ABC):
 
 
 class MockLLMClient(BaseLLMClient):
-    """Mock LLM client for testing."""
+    """Mock LLM client for testing and development.
+    
+    Provides a mock implementation of the LLM client interface for testing
+    PAL prompts without making actual API calls. Useful for unit tests and
+    local development.
+    
+    Attributes:
+        response: The mock response to return
+        call_count: Number of times generate() has been called
+        last_prompt: The last prompt passed to generate()
+        last_model: The last model name passed to generate()
+    
+    Example:
+        >>> mock_client = MockLLMClient(response="Test response")
+        >>> executor = PromptExecutor(mock_client)
+        >>> result = await executor.execute(assembly, variables)
+    """
 
     def __init__(self, response: str = "Mock response") -> None:
+        """Initialize the mock client.
+        
+        Args:
+            response: The mock response string to return from generate()
+        """
         self.response = response
         self.call_count = 0
         self.last_prompt = ""
@@ -84,9 +105,34 @@ class MockLLMClient(BaseLLMClient):
 
 
 class OpenAIClient(BaseLLMClient):
-    """OpenAI API client (requires openai package)."""
+    """OpenAI API client for GPT model integration.
+    
+    Implements the LLM client interface for OpenAI's GPT models. Requires
+    the 'openai' package to be installed.
+    
+    Note:
+        Install with: pip install openai
+    
+    Example:
+        >>> client = OpenAIClient(api_key="sk-...")
+        >>> executor = PromptExecutor(client)
+        >>> result = await executor.execute(
+        ...     assembly,
+        ...     variables={"topic": "Python"},
+        ...     model="gpt-4",
+        ...     temperature=0.7
+        ... )
+    """
 
     def __init__(self, api_key: str | None = None) -> None:
+        """Initialize the OpenAI client.
+        
+        Args:
+            api_key: OpenAI API key. If not provided, will use OPENAI_API_KEY env var.
+        
+        Raises:
+            PALExecutorError: If the openai package is not installed
+        """
         try:
             import openai
 
@@ -134,9 +180,34 @@ class OpenAIClient(BaseLLMClient):
 
 
 class AnthropicClient(BaseLLMClient):
-    """Anthropic API client (requires anthropic package)."""
+    """Anthropic API client for Claude model integration.
+    
+    Implements the LLM client interface for Anthropic's Claude models. Requires
+    the 'anthropic' package to be installed.
+    
+    Note:
+        Install with: pip install anthropic
+    
+    Example:
+        >>> client = AnthropicClient(api_key="sk-ant-...")
+        >>> executor = PromptExecutor(client)
+        >>> result = await executor.execute(
+        ...     assembly,
+        ...     variables={"code": "def hello(): pass"},
+        ...     model="claude-3-opus-20240229",
+        ...     max_tokens=1000
+        ... )
+    """
 
     def __init__(self, api_key: str | None = None) -> None:
+        """Initialize the Anthropic client.
+        
+        Args:
+            api_key: Anthropic API key. If not provided, will use ANTHROPIC_API_KEY env var.
+        
+        Raises:
+            PALExecutorError: If the anthropic package is not installed
+        """
         try:
             import anthropic
 
@@ -179,12 +250,45 @@ class AnthropicClient(BaseLLMClient):
 
 
 class PromptExecutor:
-    """Executes compiled prompts with LLM clients and provides observability."""
+    """Executes compiled prompts with LLM clients and provides observability.
+    
+    The PromptExecutor handles the execution of compiled PAL prompts through
+    various LLM providers. It provides:
+    
+    - Unified interface for different LLM providers (OpenAI, Anthropic, etc.)
+    - Execution tracking and history management
+    - Structured logging and observability
+    - Error handling and retry logic
+    
+    Attributes:
+        llm_client: The LLM client instance for API calls
+        log_file: Optional path for execution logging
+        execution_history: List of all execution results
+    
+    Example:
+        >>> from pal import AnthropicClient, PromptExecutor, PromptCompiler
+        >>> client = AnthropicClient(api_key="...")
+        >>> executor = PromptExecutor(client)
+        >>> compiler = PromptCompiler()
+        >>> 
+        >>> compiled = await compiler.compile_from_file(Path("prompt.pal"))
+        >>> result = await executor.execute(
+        ...     compiled_prompt=compiled,
+        ...     prompt_assembly=assembly,
+        ...     model="claude-3-opus-20240229",
+        ...     temperature=0.7
+        ... )
+    """
 
     def __init__(
         self, llm_client: LLMClient | BaseLLMClient, log_file: Path | None = None
     ) -> None:
-        """Initialize executor with an LLM client and optional log file."""
+        """Initialize the executor.
+        
+        Args:
+            llm_client: An LLM client instance (OpenAIClient, AnthropicClient, etc.)
+            log_file: Optional path to write execution logs in JSON format
+        """
         self.llm_client = llm_client
         self.log_file = log_file
         self.execution_history: list[ExecutionResult] = []
@@ -198,7 +302,32 @@ class PromptExecutor:
         max_tokens: int | None = None,
         **kwargs: Any,
     ) -> ExecutionResult:
-        """Execute a compiled prompt and return structured results."""
+        """Execute a compiled prompt and return structured results.
+        
+        Args:
+            compiled_prompt: The compiled prompt string from PromptCompiler
+            prompt_assembly: The original PromptAssembly object
+            model: Model identifier (e.g., "gpt-4", "claude-3-opus-20240229")
+            temperature: Sampling temperature (0.0 to 1.0)
+            max_tokens: Maximum tokens to generate
+            **kwargs: Additional model-specific parameters
+        
+        Returns:
+            ExecutionResult containing the response and metadata
+        
+        Raises:
+            PALExecutorError: If the LLM API call fails
+        
+        Example:
+            >>> result = await executor.execute(
+            ...     compiled_prompt="Analyze this code...",
+            ...     prompt_assembly=assembly,
+            ...     model="gpt-4",
+            ...     temperature=0.3,
+            ...     max_tokens=2000
+            ... )
+            >>> print(result.response)
+        """
         execution_id = str(uuid4())
         start_time = time.time()
         timestamp = datetime.now(UTC).isoformat()

@@ -1,0 +1,107 @@
+name: Documentation
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install -e .
+          pip install -r docs/requirements.txt
+
+      - name: Check docstring coverage
+        run: |
+          cd docs
+          make coverage
+          python -c "
+          import sys
+          with open('build/coverage/python.txt') as f:
+              content = f.read()
+              if 'TOTAL' in content:
+                  coverage = float(content.split('TOTAL')[1].split('%')[0])
+                  if coverage < 80:
+                      print(f'Docstring coverage {coverage}% is below 80%')
+                      sys.exit(1)
+          "
+
+      - name: Test code examples
+        run: |
+          cd docs
+          make doctest
+
+      - name: Lint documentation
+        run: |
+          doc8 docs/source --max-line-length 100
+          sphinx-lint docs/source
+
+      - name: Check links
+        run: |
+          cd docs
+          make linkcheck
+
+      - name: Build documentation
+        run: |
+          cd docs
+          make html SPHINXOPTS="-W --keep-going"
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install -e .
+          pip install -r docs/requirements.txt
+
+      - name: Build documentation
+        run: |
+          cd docs
+          make html
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "docs/build/html"
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+

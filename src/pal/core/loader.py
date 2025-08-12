@@ -16,10 +16,40 @@ from ..models.schema import ComponentLibrary, EvaluationSuite, PromptAssembly
 
 
 class Loader:
-    """Handles loading and parsing of PAL files from local filesystem and URLs."""
+    """Handles loading and parsing of PAL files from local filesystem and URLs.
+    
+    The Loader provides unified file loading capabilities for all PAL file types:
+    - Prompt assemblies (.pal)
+    - Component libraries (.pal.lib)
+    - Evaluation suites (.eval.yaml)
+    
+    Supports loading from both local files and remote URLs with automatic
+    format validation using Pydantic models.
+    
+    Attributes:
+        timeout: HTTP request timeout in seconds (default: 30.0)
+    
+    Example:
+        >>> loader = Loader()
+        >>> 
+        >>> # Load a prompt assembly
+        >>> assembly = await loader.load_prompt_assembly_async("api_design.pal")
+        >>> 
+        >>> # Load from URL
+        >>> library = await loader.load_component_library_async(
+        ...     "https://example.com/libs/personas.pal.lib"
+        ... )
+        >>> 
+        >>> # Use synchronous version
+        >>> evaluation = loader.load_evaluation_suite("tests/api.eval.yaml")
+    """
 
     def __init__(self, timeout: float = 30.0) -> None:
-        """Initialize loader with optional timeout for HTTP requests."""
+        """Initialize the loader.
+        
+        Args:
+            timeout: Timeout in seconds for HTTP requests when loading from URLs
+        """
         self.timeout = timeout
         self._http_client: httpx.AsyncClient | None = None
 
@@ -34,21 +64,76 @@ class Loader:
             await self._http_client.aclose()
 
     def load_prompt_assembly(self, path_or_url: str | Path) -> PromptAssembly:
-        """Load and validate a .pal prompt assembly file."""
+        """Load and validate a .pal prompt assembly file.
+        
+        Synchronous wrapper for load_prompt_assembly_async.
+        
+        Args:
+            path_or_url: Path to local .pal file or URL
+        
+        Returns:
+            Validated PromptAssembly object
+        
+        Raises:
+            PALLoadError: If file cannot be loaded
+            PALValidationError: If file format is invalid
+        """
         return asyncio.run(self.load_prompt_assembly_async(path_or_url))
 
     def load_component_library(self, path_or_url: str | Path) -> ComponentLibrary:
-        """Load and validate a .pal.lib component library file."""
+        """Load and validate a .pal.lib component library file.
+        
+        Synchronous wrapper for load_component_library_async.
+        
+        Args:
+            path_or_url: Path to local .pal.lib file or URL
+        
+        Returns:
+            Validated ComponentLibrary object
+        
+        Raises:
+            PALLoadError: If file cannot be loaded
+            PALValidationError: If file format is invalid
+        """
         return asyncio.run(self.load_component_library_async(path_or_url))
 
     def load_evaluation_suite(self, path_or_url: str | Path) -> EvaluationSuite:
-        """Load and validate a .eval.yaml evaluation suite file."""
+        """Load and validate a .eval.yaml evaluation suite file.
+        
+        Synchronous wrapper for load_evaluation_suite_async.
+        
+        Args:
+            path_or_url: Path to local .eval.yaml file or URL
+        
+        Returns:
+            Validated EvaluationSuite object
+        
+        Raises:
+            PALLoadError: If file cannot be loaded
+            PALValidationError: If file format is invalid
+        """
         return asyncio.run(self.load_evaluation_suite_async(path_or_url))
 
     async def load_prompt_assembly_async(
         self, path_or_url: str | Path
     ) -> PromptAssembly:
-        """Async version of load_prompt_assembly."""
+        """Load a .pal prompt assembly file asynchronously.
+        
+        Args:
+            path_or_url: Path to local .pal file or URL
+        
+        Returns:
+            Validated PromptAssembly object
+        
+        Raises:
+            PALLoadError: If file cannot be loaded
+            PALValidationError: If file format is invalid
+        
+        Example:
+            >>> async with Loader() as loader:
+            ...     assembly = await loader.load_prompt_assembly_async("prompt.pal")
+            ...     print(f"Loaded: {assembly.id}")
+        """
         content = await self._load_content(path_or_url)
         data = self._parse_yaml(content, path_or_url)
 
@@ -63,7 +148,18 @@ class Loader:
     async def load_component_library_async(
         self, path_or_url: str | Path
     ) -> ComponentLibrary:
-        """Async version of load_component_library."""
+        """Load a .pal.lib component library file asynchronously.
+        
+        Args:
+            path_or_url: Path to local .pal.lib file or URL
+        
+        Returns:
+            Validated ComponentLibrary object
+        
+        Raises:
+            PALLoadError: If file cannot be loaded
+            PALValidationError: If file format is invalid
+        """
         content = await self._load_content(path_or_url)
         data = self._parse_yaml(content, path_or_url)
 
@@ -78,7 +174,18 @@ class Loader:
     async def load_evaluation_suite_async(
         self, path_or_url: str | Path
     ) -> EvaluationSuite:
-        """Async version of load_evaluation_suite."""
+        """Load a .eval.yaml evaluation suite file asynchronously.
+        
+        Args:
+            path_or_url: Path to local .eval.yaml file or URL
+        
+        Returns:
+            Validated EvaluationSuite object
+        
+        Raises:
+            PALLoadError: If file cannot be loaded
+            PALValidationError: If file format is invalid
+        """
         content = await self._load_content(path_or_url)
         data = self._parse_yaml(content, path_or_url)
 

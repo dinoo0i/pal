@@ -1,12 +1,22 @@
 [project]
 name = "pal-framework"
-version = "0.0.2"
+version = "0.0.3"
 description = "Prompt Assembly Language - A framework for managing LLM prompts as versioned, composable software artifacts"
 readme = "README.md"
 authors = [
     { name = "Nicolas Iglesias", email = "nfiglesias@gmail.com" }
 ]
 license = {file = "LICENSE"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+keywords = ["llm", "prompts", "ai", "gpt", "claude", "prompt-engineering"]
 requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.8.0",
@@ -17,6 +27,12 @@ dependencies = [
     "rich>=13.7.0",
     "structlog>=24.2.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/cyqlelabs/pal"
+Documentation = "https://pal-framework.readthedocs.io"
+Repository = "https://github.com/cyqlelabs/pal"
+Issues = "https://github.com/cyqlelabs/pal/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -32,6 +48,19 @@ test = [
     "pytest-asyncio>=0.23.0",
     "pytest-cov>=5.0.0",
 ]
+docs = [
+    "sphinx>=8.1.0",
+    "sphinx-rtd-theme>=3.0.2",
+    "sphinx-autodoc-typehints>=2.5.0",
+    "myst-parser>=4.0.0",
+    "sphinx-copybutton>=0.5.2",
+    "sphinx-autobuild>=2024.10.0",
+    "sphinx-autoapi>=3.3.0",
+    "doc8>=1.1.0",
+]
+openai = ["openai>=1.0.0"]
+anthropic = ["anthropic>=0.18.0"]
+all = ["openai>=1.0.0", "anthropic>=0.18.0"]
 
 [project.scripts]
 pal = "pal.cli:main"
@@ -73,7 +102,8 @@ ignore_missing_imports = true
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_functions = ["test_*"]
-addopts = "--strict-markers --strict-config --cov=pal --cov-report=term-missing"
+addopts = "--strict-markers --strict-config --cov=pal --cov-report=term-missing --doctest-modules --doctest-glob='*.md'"
+doctest_optionflags = "NORMALIZE_WHITESPACE ELLIPSIS"
 
 [tool.coverage.run]
 source = ["src"]
