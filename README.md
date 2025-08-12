@@ -50,7 +50,7 @@ my_pal_project/
 
 ### 1. Create a Component Library
 
-For a detailed guide, [read this](docs/source/guides/component-libraries.md).
+For a detailed guide, [read this](https://prompt-assembly-language-pal.readthedocs.io/en/latest/guides/component-libraries.html).
 
 ```yaml
 # libraries/traits.pal.lib
@@ -71,7 +71,7 @@ components:
 ### 2. Create a Prompt Assembly
 
 
-For a detailed guide, [read this](docs/source/guides/writing-prompts.md).
+For a detailed guide, [read this](https://prompt-assembly-language-pal.readthedocs.io/en/latest/guides/writing-prompts.html).
 
 ```yaml
 # prompts/classify_intent.pal
@@ -215,7 +215,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🆘 Support
 
-- 📚 [Documentation](#)
+- 📚 [Documentation](https://prompt-assembly-language-pal.readthedocs.io)
 - 🐛 [Issues](https://github.com/cyqlelabs/pal/issues)
 - 💬 [Discussions](https://github.com/cyqlelabs/pal/discussions)
 
