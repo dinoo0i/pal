@@ -74,11 +74,15 @@ class PromptCompiler:
         resolver: The Resolver instance for dependency resolution
 
     Example:
-        >>> compiler = PromptCompiler()
-        >>> prompt = await compiler.compile_from_file(
-        ...     Path("prompts/api_design.pal"),
-        ...     variables={"api_name": "UserService", "requirements": ["REST", "JSON"]}
-        ... )
+        >>> import asyncio
+        >>> async def example():
+        ...     compiler = PromptCompiler()
+        ...     prompt = await compiler.compile_from_file(
+        ...         Path("prompts/api_design.pal"),
+        ...         variables={"api_name": "UserService", "requirements": ["REST", "JSON"]}
+        ...     )
+        ...     return prompt
+        >>> # asyncio.run(example())  # doctest: +SKIP
     """
 
     def __init__(self, loader: Loader | None = None) -> None:
@@ -108,11 +112,15 @@ class PromptCompiler:
             PALCompilerError: If compilation fails
 
         Example:
-            >>> compiler = PromptCompiler()
-            >>> prompt = await compiler.compile_from_file(
-            ...     Path("code_review.pal"),
-            ...     {"language": "python", "code": "def add(a, b): return a + b"}
-            ... )
+            >>> import asyncio
+            >>> async def example():
+            ...     compiler = PromptCompiler()
+            ...     prompt = await compiler.compile_from_file(
+            ...         Path("code_review.pal"),
+            ...         {"language": "python", "code": "def add(a, b): return a + b"}
+            ...     )
+            ...     return prompt
+            >>> # asyncio.run(example())  # doctest: +SKIP
         """
         prompt_assembly = await self.loader.load_prompt_assembly_async(pal_file)
         return await self.compile(prompt_assembly, variables, pal_file)
@@ -400,10 +408,15 @@ class PromptCompiler:
             Set of undeclared variable names found in the composition
 
         Example:
-            >>> compiler = PromptCompiler()
-            >>> assembly = await loader.load_prompt_assembly_async(Path("prompt.pal"))
-            >>> undeclared = compiler.analyze_template_variables(assembly)
-            >>> print(f"Undeclared variables: {undeclared}")
+            >>> import asyncio
+            >>> from pal import PromptCompiler, Loader
+            >>> async def example():
+            ...     compiler = PromptCompiler()
+            ...     loader = Loader()
+            ...     assembly = await loader.load_prompt_assembly_async(Path("prompt.pal"))
+            ...     undeclared = compiler.analyze_template_variables(assembly)
+            ...     print(f"Undeclared variables: {undeclared}")
+            >>> # asyncio.run(example())  # doctest: +SKIP
         """
         env = Environment()
         variables = set()

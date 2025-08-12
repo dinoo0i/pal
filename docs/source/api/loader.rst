@@ -52,29 +52,38 @@ Basic file loading::
     library = loader.load_component_library("components.pal.lib")
 
     # Load evaluation suite
-    evaluation = loader.load_evaluation_suite("tests.eval.yaml")
+    evaluation = loader.load_evaluation_suite("examples/evaluation/classify_intent.eval.yaml")
 
 Async loading with context manager::
 
-    async with Loader(timeout=60.0) as loader:
-        assembly = await loader.load_prompt_assembly_async("prompt.pal")
-        library = await loader.load_component_library_async(
-            "https://example.com/libs/personas.pal.lib"
-        )
+    import asyncio
+    async def example():
+        async with Loader(timeout=60.0) as loader:
+            assembly = await loader.load_prompt_assembly_async("prompt.pal")
+            library = await loader.load_component_library_async(
+                "https://example.com/libs/personas.pal.lib"
+            )
+
+    asyncio.run(example())
 
 Loading from URLs::
 
-    loader = Loader(timeout=30.0)
+    import asyncio
 
-    # Load from GitHub
-    library = await loader.load_component_library_async(
-        "https://raw.githubusercontent.com/org/repo/main/libs/tasks.pal.lib"
-    )
+    async def load_from_urls():
+        loader = Loader(timeout=30.0)
 
-    # Load from any HTTP source
-    assembly = await loader.load_prompt_assembly_async(
-        "https://example.com/prompts/analysis.pal"
-    )
+        # Load from GitHub
+        library = await loader.load_component_library_async(
+            "https://raw.githubusercontent.com/org/repo/main/libs/tasks.pal.lib"
+        )
+
+        # Load from any HTTP source
+        assembly = await loader.load_prompt_assembly_async(
+            "https://example.com/prompts/analysis.pal"
+        )
+
+    asyncio.run(load_from_urls())
 
 Error Handling
 --------------

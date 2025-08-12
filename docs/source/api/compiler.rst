@@ -51,15 +51,23 @@ Async compilation with custom loader::
 
     result = asyncio.run(compile_prompt())
 
-Analyzing template variables::
+Analyzing template variables:
 
-    compiler = PromptCompiler()
-    assembly = await loader.load_prompt_assembly_async("prompt.pal")
+.. code-block:: python
 
-    # Find undeclared variables
-    undeclared = compiler.analyze_template_variables(assembly)
-    if undeclared:
-        print(f"Warning: Undeclared variables: {undeclared}")
+    from pal import PromptCompiler, Loader
+
+    def analyze_variables():
+        compiler = PromptCompiler()
+        loader = Loader()
+        assembly = loader.load_prompt_assembly("prompt.pal")
+
+        # Find undeclared variables
+        undeclared = compiler.analyze_template_variables(assembly)
+        if undeclared:
+            print(f"Warning: Undeclared variables: {undeclared}")
+
+    analyze_variables()
 
 Internal Classes
 ----------------

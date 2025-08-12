@@ -41,7 +41,7 @@ class Loader:
         ... )
         >>>
         >>> # Use synchronous version
-        >>> evaluation = loader.load_evaluation_suite("tests/api.eval.yaml")
+        >>> # evaluation = loader.load_evaluation_suite("examples/evaluation/classify_intent.eval.yaml")  # doctest: +SKIP
     """
 
     def __init__(self, timeout: float = 30.0) -> None:
@@ -130,9 +130,12 @@ class Loader:
             PALValidationError: If file format is invalid
 
         Example:
-            >>> async with Loader() as loader:
-            ...     assembly = await loader.load_prompt_assembly_async("prompt.pal")
-            ...     print(f"Loaded: {assembly.id}")
+            >>> import asyncio
+            >>> async def example():
+            ...     async with Loader() as loader:
+            ...         assembly = await loader.load_prompt_assembly_async("prompt.pal")
+            ...         print(f"Loaded: {assembly.id}")
+            >>> # asyncio.run(example())  # doctest: +SKIP
         """
         content = await self._load_content(path_or_url)
         data = self._parse_yaml(content, path_or_url)

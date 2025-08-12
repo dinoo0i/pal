@@ -63,9 +63,13 @@ class MockLLMClient(BaseLLMClient):
         last_model: The last model name passed to generate()
 
     Example:
-        >>> mock_client = MockLLMClient(response="Test response")
-        >>> executor = PromptExecutor(mock_client)
-        >>> result = await executor.execute(assembly, variables)
+        >>> import asyncio
+        >>> async def example():
+        ...     mock_client = MockLLMClient(response="Test response")
+        ...     executor = PromptExecutor(mock_client)
+        ...     result = await executor.execute(assembly, variables)
+        ...     return result
+        >>> # asyncio.run(example())  # doctest: +SKIP
     """
 
     def __init__(self, response: str = "Mock response") -> None:
@@ -114,14 +118,18 @@ class OpenAIClient(BaseLLMClient):
         Install with: pip install openai
 
     Example:
-        >>> client = OpenAIClient(api_key="sk-...")
-        >>> executor = PromptExecutor(client)
-        >>> result = await executor.execute(
-        ...     assembly,
-        ...     variables={"topic": "Python"},
-        ...     model="gpt-4",
-        ...     temperature=0.7
-        ... )
+        >>> import asyncio
+        >>> async def example():
+        ...     client = OpenAIClient(api_key="sk-...")
+        ...     executor = PromptExecutor(client)
+        ...     result = await executor.execute(
+        ...         assembly,
+        ...         variables={"topic": "Python"},
+        ...         model="gpt-4",
+        ...         temperature=0.7
+        ...     )
+        ...     return result
+        >>> # asyncio.run(example())  # doctest: +SKIP
     """
 
     def __init__(self, api_key: str | None = None) -> None:
@@ -189,14 +197,18 @@ class AnthropicClient(BaseLLMClient):
         Install with: pip install anthropic
 
     Example:
-        >>> client = AnthropicClient(api_key="sk-ant-...")
-        >>> executor = PromptExecutor(client)
-        >>> result = await executor.execute(
-        ...     assembly,
-        ...     variables={"code": "def hello(): pass"},
-        ...     model="claude-3-opus-20240229",
-        ...     max_tokens=1000
-        ... )
+        >>> import asyncio
+        >>> async def example():
+        ...     client = AnthropicClient(api_key="sk-ant-...")
+        ...     executor = PromptExecutor(client)
+        ...     result = await executor.execute(
+        ...         assembly,
+        ...         variables={"code": "def hello(): pass"},
+        ...         model="claude-3-opus-20240229",
+        ...         max_tokens=1000
+        ...     )
+        ...     return result
+        >>> # asyncio.run(example())  # doctest: +SKIP
     """
 
     def __init__(self, api_key: str | None = None) -> None:
@@ -266,18 +278,21 @@ class PromptExecutor:
         execution_history: List of all execution results
 
     Example:
+        >>> import asyncio
         >>> from pal import AnthropicClient, PromptExecutor, PromptCompiler
-        >>> client = AnthropicClient(api_key="...")
-        >>> executor = PromptExecutor(client)
-        >>> compiler = PromptCompiler()
-        >>>
-        >>> compiled = await compiler.compile_from_file(Path("prompt.pal"))
-        >>> result = await executor.execute(
-        ...     compiled_prompt=compiled,
-        ...     prompt_assembly=assembly,
-        ...     model="claude-3-opus-20240229",
-        ...     temperature=0.7
-        ... )
+        >>> async def example():
+        ...     client = AnthropicClient(api_key="...")
+        ...     executor = PromptExecutor(client)
+        ...     compiler = PromptCompiler()
+        ...     compiled = await compiler.compile_from_file(Path("prompt.pal"))
+        ...     result = await executor.execute(
+        ...         compiled_prompt=compiled,
+        ...         prompt_assembly=assembly,
+        ...         model="claude-3-opus-20240229",
+        ...         temperature=0.7
+        ...     )
+        ...     return result
+        >>> # asyncio.run(example())  # doctest: +SKIP
     """
 
     def __init__(
@@ -319,14 +334,17 @@ class PromptExecutor:
             PALExecutorError: If the LLM API call fails
 
         Example:
-            >>> result = await executor.execute(
-            ...     compiled_prompt="Analyze this code...",
-            ...     prompt_assembly=assembly,
-            ...     model="gpt-4",
-            ...     temperature=0.3,
-            ...     max_tokens=2000
-            ... )
-            >>> print(result.response)
+            >>> import asyncio
+            >>> async def example():
+            ...     result = await executor.execute(
+            ...         compiled_prompt="Analyze this code...",
+            ...         prompt_assembly=assembly,
+            ...         model="gpt-4",
+            ...         temperature=0.3,
+            ...         max_tokens=2000
+            ...     )
+            ...     print(result.response)
+            >>> # asyncio.run(example())  # doctest: +SKIP
         """
         execution_id = str(uuid4())
         start_time = time.time()

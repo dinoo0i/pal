@@ -2,3 +2,4 @@ __pycache__/
 
 # Documentation build artifacts
 docs/build/
+coverage.xml
