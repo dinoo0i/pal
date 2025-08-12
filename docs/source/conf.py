@@ -2,14 +2,13 @@
 
 import os
 import sys
-from pathlib import Path
 
 # Add project root to path for autodoc
 sys.path.insert(0, os.path.abspath("../.."))
 
 # Project information
 project = "PAL Framework"
-copyright = "2024, Nicolas Iglesias"
+copyright_info = "2025, Nicolas Iglesias"
 author = "Nicolas Iglesias"
 release = "0.0.2"
 

@@ -60,19 +60,19 @@ class ComponentTemplateLoader(BaseLoader):
 
 class PromptCompiler:
     """Compiles PAL prompt assemblies into executable prompt strings.
-    
+
     The PromptCompiler is responsible for transforming PAL prompt assemblies
     into fully rendered prompt strings ready for LLM execution. It handles:
-    
+
     - Template variable resolution and type checking
     - Component library imports and dependencies
     - Jinja2 template compilation with custom loaders
     - Variable validation and default value assignment
-    
+
     Attributes:
         loader: The Loader instance for loading PAL files
         resolver: The Resolver instance for dependency resolution
-    
+
     Example:
         >>> compiler = PromptCompiler()
         >>> prompt = await compiler.compile_from_file(
@@ -83,7 +83,7 @@ class PromptCompiler:
 
     def __init__(self, loader: Loader | None = None) -> None:
         """Initialize the compiler.
-        
+
         Args:
             loader: Optional Loader instance. If not provided, a default Loader is created.
         """
@@ -94,19 +94,19 @@ class PromptCompiler:
         self, pal_file: Path, variables: dict[str, Any] | None = None
     ) -> str:
         """Compile a PAL file into a prompt string.
-        
+
         Args:
             pal_file: Path to the .pal file to compile
             variables: Optional dictionary of variables to use in template rendering
-        
+
         Returns:
             The compiled prompt string ready for LLM execution
-        
+
         Raises:
             PALLoadError: If the file cannot be loaded
             PALMissingVariableError: If required variables are missing
             PALCompilerError: If compilation fails
-        
+
         Example:
             >>> compiler = PromptCompiler()
             >>> prompt = await compiler.compile_from_file(
@@ -121,16 +121,16 @@ class PromptCompiler:
         self, pal_file: Path, variables: dict[str, Any] | None = None
     ) -> str:
         """Synchronous version of compile_from_file.
-        
+
         Convenience method for using the compiler in synchronous contexts.
-        
+
         Args:
             pal_file: Path to the .pal file to compile
             variables: Optional dictionary of variables to use in template rendering
-        
+
         Returns:
             The compiled prompt string ready for LLM execution
-        
+
         Raises:
             PALLoadError: If the file cannot be loaded
             PALMissingVariableError: If required variables are missing
@@ -145,18 +145,18 @@ class PromptCompiler:
         base_path: Path | None = None,
     ) -> str:
         """Compile a prompt assembly into a final prompt string.
-        
+
         This is the core compilation method that processes a PromptAssembly object,
         resolves all dependencies, validates variables, and renders the final prompt.
-        
+
         Args:
             prompt_assembly: The PromptAssembly object to compile
             variables: Dictionary of variables for template rendering
             base_path: Base path for resolving relative imports
-        
+
         Returns:
             The fully compiled and rendered prompt string
-        
+
         Raises:
             PALMissingComponentError: If referenced components are not found
             PALMissingVariableError: If required variables are missing
@@ -388,17 +388,17 @@ class PromptCompiler:
 
     def analyze_template_variables(self, prompt_assembly: PromptAssembly) -> set[str]:
         """Analyze and extract undeclared template variables from the composition.
-        
+
         This method helps identify which variables are referenced in the template
         but not explicitly declared in the variables section. Useful for debugging
         and validation.
-        
+
         Args:
             prompt_assembly: The PromptAssembly to analyze
-        
+
         Returns:
             Set of undeclared variable names found in the composition
-        
+
         Example:
             >>> compiler = PromptCompiler()
             >>> assembly = await loader.load_prompt_assembly_async(Path("prompt.pal"))
