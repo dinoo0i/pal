@@ -7,7 +7,7 @@
 
 PAL (Prompt Assembly Language) is a framework for managing LLM prompts as versioned, composable software artifacts. It treats prompt engineering with the same rigor as software engineering, focusing on modularity, versioning, and testability.
 
-See also the [NodeJS version](https://github.com/cyqlelabs/pal-node) of PAL (*WIP*)
+See also the [NodeJS version](https://github.com/cyqlelabs/pal-node) of PAL (_WIP_)
 
 ## ⚡ Features
 
@@ -50,6 +50,8 @@ my_pal_project/
 
 ### 1. Create a Component Library
 
+For a detailed guide, [read this](docs/source/guides/component-libraries.md).
+
 ```yaml
 # libraries/traits.pal.lib
 pal_version: "1.0"
@@ -67,6 +69,9 @@ components:
 ```
 
 ### 2. Create a Prompt Assembly
+
+
+For a detailed guide, [read this](docs/source/guides/writing-prompts.md).
 
 ```yaml
 # prompts/classify_intent.pal
