@@ -6,11 +6,12 @@ import asyncio
 import json
 import time
 from abc import ABC, abstractmethod
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Protocol
 from uuid import uuid4
 
+import httpx
 import structlog
 
 from ..exceptions.core import PALExecutorError
@@ -307,6 +308,10 @@ class PromptExecutor:
         self.llm_client = llm_client
         self.log_file = log_file
         self.execution_history: list[ExecutionResult] = []
+        self.pricing_cache: dict[str, Any] | None = None
+        self.cache_expiry: datetime | None = None
+        self.cache_timeout: timedelta = timedelta(minutes=5)
+        self.pricing_url: str = "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json"
 
     async def execute(
         self,
@@ -388,7 +393,7 @@ class PromptExecutor:
                 execution_time_ms=execution_time,
                 input_tokens=response_data.get("input_tokens"),
                 output_tokens=response_data.get("output_tokens"),
-                cost_usd=self._estimate_cost(
+                cost_usd=await self._estimate_cost(
                     model,
                     response_data.get("input_tokens"),
                     response_data.get("output_tokens"),
@@ -530,39 +535,74 @@ class PromptExecutor:
             with open(self.log_file, "a", encoding="utf-8") as f:
                 f.write(content)
 
-    def _estimate_cost(
-        self, model: str, input_tokens: int | None, output_tokens: int | None
-    ) -> float | None:
-        """Estimate cost based on token counts (rough estimates)."""
-        if not input_tokens or not output_tokens:
+    async def _fetch_live_pricing(self) -> dict[str, Any] | None:
+        """Fetch live pricing data from LiteLLM API with caching."""
+        now = datetime.now(UTC)
+
+        if self.pricing_cache and self.cache_expiry and now < self.cache_expiry:
+            return self.pricing_cache
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(self.pricing_url, timeout=10.0)
+                response.raise_for_status()
+                self.pricing_cache = response.json()
+                self.cache_expiry = now + self.cache_timeout
+                logger.info("Fetched and cached live pricing data")
+                return self.pricing_cache
+        except (httpx.HTTPStatusError, httpx.RequestError) as e:
+            logger.error("Failed to fetch live pricing data", error=str(e))
             return None
 
-        # Rough cost estimates per 1K tokens (as of 2024)
-        cost_table = {
-            # OpenAI models
-            "gpt-4": {"input": 0.03, "output": 0.06},
-            "gpt-4-turbo": {"input": 0.01, "output": 0.03},
-            "gpt-3.5-turbo": {"input": 0.0015, "output": 0.002},
-            # Anthropic models
-            "claude-3-opus-20240229": {"input": 0.015, "output": 0.075},
-            "claude-3-sonnet-20240229": {"input": 0.003, "output": 0.015},
-            "claude-3-haiku-20240307": {"input": 0.00025, "output": 0.00125},
-        }
+    async def _estimate_cost(
+        self,
+        model: str,
+        input_tokens: int | None,
+        output_tokens: int | None,
+    ) -> float | None:
+        """Estimate cost based on token counts using live pricing data."""
+        if input_tokens is None or output_tokens is None:
+            return None
 
-        # Find matching model (prefix matching)
-        model_costs = None
-        for model_key, costs in cost_table.items():
-            if model.startswith(model_key):
-                model_costs = costs
-                break
+        pricing_data = await self._fetch_live_pricing()
+        if not pricing_data:
+            return None
 
-        if not model_costs:
-            return None  # Unknown model
+        # Normalize model name for lookup
+        provider, *model_name_parts = model.split("/")
+        model_name = "/".join(model_name_parts)
 
-        input_cost = (input_tokens / 1000) * model_costs["input"]
-        output_cost = (output_tokens / 1000) * model_costs["output"]
+        # Look for a direct match
+        model_pricing = pricing_data.get(model)
 
-        return input_cost + output_cost
+        # Fallback for openrouter models
+        if not model_pricing:
+            openrouter_key = f"openrouter/{model}"
+            model_pricing = pricing_data.get(openrouter_key)
+
+        # Fallback for models without provider prefix
+        if not model_pricing:
+            model_pricing = pricing_data.get(model_name)
+
+        if model_pricing:
+            try:
+                input_cost_per_token = float(model_pricing["input_cost_per_token"])
+                output_cost_per_token = float(model_pricing["output_cost_per_token"])
+
+                input_cost = input_tokens * input_cost_per_token
+                output_cost = output_tokens * output_cost_per_token
+                return input_cost + output_cost
+            except (KeyError, TypeError, ValueError) as e:
+                logger.warning(
+                    "Could not parse pricing for model",
+                    model=model,
+                    pricing_data=model_pricing,
+                    error=str(e),
+                )
+                return None
+
+        logger.warning("Model not found in live pricing data", model=model)
+        return None
 
     def get_execution_history(self) -> list[ExecutionResult]:
         """Get the execution history."""

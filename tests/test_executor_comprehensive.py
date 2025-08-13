@@ -168,51 +168,87 @@ class TestPromptExecutor:
         )
         assert result.success
 
-    def test_estimate_cost_known_models(self):
+    @pytest.mark.asyncio
+    async def test_estimate_cost_known_models(self):
         """Test cost estimation for known models."""
         mock_client = MockLLMClient()
         executor = PromptExecutor(mock_client)
 
-        # Test OpenAI model
-        cost = executor._estimate_cost("gpt-4", 1000, 2000)
-        assert cost is not None
-        assert cost > 0
+        pricing_data = {
+            "gpt-4": {
+                "input_cost_per_token": 0.00003,
+                "output_cost_per_token": 0.00006,
+            },
+            "claude-3-sonnet-20240229": {
+                "input_cost_per_token": 0.000003,
+                "output_cost_per_token": 0.000015,
+            },
+        }
 
-        # Test Anthropic model
-        cost = executor._estimate_cost("claude-3-sonnet-20240229", 1000, 2000)
-        assert cost is not None
-        assert cost > 0
+        with patch.object(
+            executor, "_fetch_live_pricing", AsyncMock(return_value=pricing_data)
+        ):
+            # Test OpenAI model
+            cost = await executor._estimate_cost("gpt-4", 1000, 2000)
+            assert cost is not None
+            assert cost == (1000 * 0.00003) + (2000 * 0.00006)
 
-    def test_estimate_cost_unknown_model(self):
+            # Test Anthropic model
+            cost = await executor._estimate_cost("claude-3-sonnet-20240229", 1000, 2000)
+            assert cost is not None
+            assert cost == (1000 * 0.000003) + (2000 * 0.000015)
+
+    @pytest.mark.asyncio
+    async def test_estimate_cost_unknown_model(self):
         """Test cost estimation for unknown models."""
         mock_client = MockLLMClient()
         executor = PromptExecutor(mock_client)
 
-        cost = executor._estimate_cost("unknown-model", 1000, 2000)
-        assert cost is None
+        pricing_data = {
+            "gpt-4": {
+                "input_cost_per_token": 0.00003,
+                "output_cost_per_token": 0.00006,
+            },
+        }
 
-    def test_estimate_cost_no_tokens(self):
+        with patch.object(
+            executor, "_fetch_live_pricing", AsyncMock(return_value=pricing_data)
+        ):
+            cost = await executor._estimate_cost("unknown-model", 1000, 2000)
+            assert cost is None
+
+    @pytest.mark.asyncio
+    async def test_estimate_cost_no_tokens(self):
         """Test cost estimation with missing token counts."""
         mock_client = MockLLMClient()
         executor = PromptExecutor(mock_client)
 
-        cost = executor._estimate_cost("gpt-4", None, 2000)
-        assert cost is None
+        with patch.object(executor, "_fetch_live_pricing", AsyncMock(return_value={})):
+            cost = await executor._estimate_cost("gpt-4", None, 2000)
+            assert cost is None
 
-        cost = executor._estimate_cost("gpt-4", 1000, None)
-        assert cost is None
+            cost = await executor._estimate_cost("gpt-4", 1000, None)
+            assert cost is None
 
-    def test_estimate_cost_prefix_matching(self):
-        """Test cost estimation with model name prefix matching."""
+    @pytest.mark.asyncio
+    async def test_estimate_cost_openrouter_fallback(self):
+        """Test cost estimation with openrouter fallback."""
         mock_client = MockLLMClient()
         executor = PromptExecutor(mock_client)
 
-        # Test with full model name that starts with known prefix
-        cost = executor._estimate_cost("gpt-4-turbo-preview", 1000, 2000)
-        assert cost is not None
+        pricing_data = {
+            "openrouter/google/gemini-flash-1.5": {
+                "input_cost_per_token": 0.00000035,
+                "output_cost_per_token": 0.0000007,
+            },
+        }
 
-        cost = executor._estimate_cost("claude-3-opus-20240229-preview", 1000, 2000)
-        assert cost is not None
+        with patch.object(
+            executor, "_fetch_live_pricing", AsyncMock(return_value=pricing_data)
+        ):
+            cost = await executor._estimate_cost("google/gemini-flash-1.5", 1000, 2000)
+            assert cost is not None
+            assert cost == (1000 * 0.00000035) + (2000 * 0.0000007)
 
     def test_get_execution_history(self, sample_prompt_assembly):
         """Test getting execution history."""
