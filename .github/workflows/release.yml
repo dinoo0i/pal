@@ -49,8 +49,16 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
-          # Get the last release tag
-          LAST_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' | head -2 | tail -1)
+          # Get the current tag being released
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            CURRENT_TAG="v${{ github.event.inputs.version }}"
+          else
+            CURRENT_TAG="${GITHUB_REF#refs/tags/}"
+          fi
+
+          # Get the last release tag (excluding the current one being created)
+          LAST_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' | grep -v "^${CURRENT_TAG}$" | head -1)
+
           if [ -z "$LAST_TAG" ]; then
             # If no previous tag, get all commits
             COMMITS=$(git log --oneline --pretty=format:"- %s (%h)" HEAD)
