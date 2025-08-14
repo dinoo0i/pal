@@ -71,7 +71,6 @@ components:
 
 ### 2. Create a Prompt Assembly
 
-
 For a detailed guide, [read this](https://prompt-assembly-language-pal.readthedocs.io/en/latest/guides/writing-prompts.html).
 
 ```yaml
@@ -94,16 +93,16 @@ variables:
 
 composition:
   - "{{ traits.helpful_assistant }}"
-  - ""
-  - "## Task"
-  - "Classify this user query into one of the available intents:"
-  - ""
-  - "**Available Intents:**"
-  - "{% for intent in available_intents %}"
-  - "- {{ intent.name }}: {{ intent.description }}"
-  - "{% endfor %}"
-  - ""
-  - "**User Query:** {{ user_query }}"
+  - |
+    ## Task
+    Classify this user query into one of the available intents:
+
+    **Available Intents:**
+    {% for intent in available_intents %}
+    - {{ intent.name }}: {{ intent.description }}
+    {% endfor %}
+
+    **User Query:** {{ user_query }}
 ```
 
 ### 3. Use the CLI
