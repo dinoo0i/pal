@@ -16,6 +16,7 @@ versioned, composable software artifacts.
 
    guides/writing-prompts
    guides/component-libraries
+   guides/evaluation
 
 .. toctree::
    :maxdepth: 2
